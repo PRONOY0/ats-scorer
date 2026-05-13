@@ -1,5 +1,5 @@
 import client from "@/lib/client";
-import { ResumeStatus, TargetRole } from "@/lib/generated/prisma";
+import { ResumeStatus } from "@/lib/generated/prisma";
 import { analyzeResume } from "@/lib/groq";
 import { prisma } from "@/lib/prisma";
 import { pdfToRawText } from "@/services/extractPdfText";
