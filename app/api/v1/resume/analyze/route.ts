@@ -7,6 +7,7 @@ import { NextResponse } from "next/server";
 import { generateHash } from "@/services/generateHash";
 import { rateLimit } from "@/lib/rateLimiter";
 import { getAuthUser } from "@/services/verifyUser";
+import { analyzeSchema } from "@/services/validation";
 
 export async function POST(req: Request) {
   try {
@@ -21,10 +22,9 @@ export async function POST(req: Request) {
     const formData = await req.formData();
     const resume = formData.get("resume") as File;
     const targetRole = formData.get("targetRole") as string;
-    const parsedTargetRole = targetRole as TargetRole;
 
     const maxSize = 2 * 1024 * 1024;
-
+    
     if (!resume) {
       return NextResponse.json(
         { message: "Resume file is required" },
@@ -46,12 +46,22 @@ export async function POST(req: Request) {
       );
     }
 
-    if (!targetRole) {
+    const validation = analyzeSchema.safeParse({ targetRole });
+
+    if (!validation.success) {
       return NextResponse.json(
-        { message: "Target role is required" },
-        { status: 400 },
+        {
+          message:
+            validation.error.flatten().fieldErrors.targetRole?.[0] ??
+            "Invalid target Role",
+        },
+        {
+          status: 400,
+        },
       );
     }
+
+    const parsedTargetRole = validation.data.targetRole;
 
     const rawText = await pdfToRawText(resume);
 
