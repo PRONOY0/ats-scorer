@@ -1,23 +1,17 @@
 import client from "@/lib/client";
 import { prisma } from "@/lib/prisma";
-import { verifySession } from "@/services/verifyUser";
-import { cookies } from "next/headers";
+import { getAuthUser } from "@/services/verifyUser";
 import { NextResponse } from "next/server";
 
 export async function GET(req: Request) {
   try {
-    const sessionCookie = (await cookies()).get("session")?.value;
+    const { user, error } = await getAuthUser();
 
-    if (!sessionCookie) {
-      return NextResponse.json(
-        { message: "No session cookie provided" },
-        { status: 401 },
-      );
+    if (error) {
+      return error;
     }
 
-    const decode = await verifySession(sessionCookie);
-
-    const cacheKey = `user:userDetails:${decode.uid}`;
+    const cacheKey = `user:userDetails:${user.uid}`;
 
     const cachedData = await client.get(cacheKey);
 
@@ -27,7 +21,7 @@ export async function GET(req: Request) {
 
     const response = await prisma.user.findUnique({
       where: {
-        id: decode.uid,
+        id: user.uid,
       },
     });
 

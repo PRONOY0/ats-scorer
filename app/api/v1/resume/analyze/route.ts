@@ -3,29 +3,33 @@ import { ResumeStatus, TargetRole } from "@/lib/generated/prisma";
 import { analyzeResume } from "@/lib/groq";
 import { prisma } from "@/lib/prisma";
 import { pdfToRawText } from "@/services/extractPdfText";
-import { verifySession } from "@/services/verifyUser";
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { generateHash } from "@/services/generateHash";
+import { rateLimit } from "@/lib/rateLimiter";
+import { getAuthUser } from "@/services/verifyUser";
 
 export async function POST(req: Request) {
   try {
-    const sessionCookie = (await cookies()).get("session")?.value;
+    const { user, error } = await getAuthUser();
 
-    if (!sessionCookie) {
+    if (error) {
+      return error;
+    }
+
+    const user_id = user.uid;
+
+    const { success, remaining, resetIn } = await rateLimit(user_id);
+
+    if (!success) {
       return NextResponse.json(
-        { message: "Session cookie not found" },
-        { status: 401 },
+        {
+          message: `Limit exceeded. You can analyze 5 resumes per hour. Try again in ${Math.ceil(resetIn / 60)} minutes`,
+          remaining,
+          resetIn,
+        },
+        { status: 429 },
       );
     }
-
-    const decode = await verifySession(sessionCookie);
-
-    if (!decode) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-    }
-
-    const user_id: string = decode.uid;
 
     const formData = await req.formData();
 
@@ -128,7 +132,10 @@ export async function POST(req: Request) {
       );
     }
 
-    return NextResponse.json({ message: "Extracted",  updateResume}, { status: 200 });
+    return NextResponse.json(
+      { message: "Extracted", updateResume },
+      { status: 200 },
+    );
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Internal Server Error";

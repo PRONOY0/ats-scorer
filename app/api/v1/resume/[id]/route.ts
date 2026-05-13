@@ -1,7 +1,6 @@
 import client from "@/lib/client";
 import { prisma } from "@/lib/prisma";
-import { verifySession } from "@/services/verifyUser";
-import { cookies } from "next/headers";
+import { getAuthUser } from "@/services/verifyUser";
 import { NextResponse } from "next/server";
 
 export async function GET(
@@ -9,28 +8,19 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const sessionCookie = (await cookies()).get("session")?.value;
+    const { user, error } = await getAuthUser();
 
-    if (!sessionCookie) {
-      return NextResponse.json(
-        { message: "Session cookie not found" },
-        { status: 401 },
-      );
+    if (error) {
+      return error;
     }
+
+    const user_id: string = user.uid;
 
     const { id } = await params;
 
     if (!id) {
       return NextResponse.json({ error: "Id is required" }, { status: 400 });
     }
-
-    const decode = await verifySession(sessionCookie);
-
-    if (!decode) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-    }
-
-    const user_id: string = decode.uid;
 
     const cacheKey = `user:${user_id}:resume:${id}`;
 

@@ -1,23 +1,17 @@
 import client from "@/lib/client";
 import { prisma } from "@/lib/prisma";
-import { verifySession } from "@/services/verifyUser";
-import { cookies } from "next/headers";
+import { getAuthUser } from "@/services/verifyUser";
 import { NextResponse } from "next/server";
 
 export async function GET(req: Request) {
   try {
-    const sessionCookie = (await cookies()).get("session")?.value;
+    const { user, error } = await getAuthUser();
 
-    if (!sessionCookie) {
-      return NextResponse.json(
-        { message: "Session cookie not found" },
-        { status: 401 },
-      );
+    if (error) {
+      return error;
     }
 
-    const decode = await verifySession(sessionCookie);
-
-    const user_id = decode.uid;
+    const user_id = user.uid;
 
     const check_user_exist = await prisma.user.findFirst({
       where: {
