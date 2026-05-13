@@ -11,9 +11,22 @@ export async function GET(req: Request) {
       return error;
     }
 
+    const { searchParams } = new URL(req.url);
+
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
+    const limit = Math.max(
+      1,
+      Math.min(50, parseInt(searchParams.get("limit") || "10")),
+    );
+
+    const orderBy = searchParams.get("orderBy") || "latest";
+    const search = searchParams.get("search") || "";
+
+    const skip = (page - 1) * limit;
+
     const user_id = user.uid;
 
-    const check_user_exist = await prisma.user.findFirst({
+    const check_user_exist = await prisma.user.findUnique({
       where: {
         id: user_id,
       },
@@ -25,8 +38,8 @@ export async function GET(req: Request) {
 
     const cacheKey =
       check_user_exist.role === "ADMIN"
-        ? `user:${check_user_exist.role}:resumes`
-        : `user:${user_id}:resumes`;
+        ? `admin:resumes:${page}:${limit}:${orderBy}:${search}`
+        : `user:${user_id}:resumes:${page}:${limit}:${orderBy}:${search}`;
 
     const cachedData = await client.get(cacheKey);
 
@@ -47,8 +60,10 @@ export async function GET(req: Request) {
             },
           },
         },
+        skip: skip,
+        take: limit,
         orderBy: {
-          createdAt: "desc",
+          createdAt: orderBy === "latest" ? "desc" : "asc",
         },
       });
 
@@ -62,10 +77,18 @@ export async function GET(req: Request) {
       getAllResumes = await prisma.resume.findMany({
         where: {
           userId: user_id,
+          ...(search && {
+            title: {
+              contains: search,
+              mode: "insensitive",
+            },
+          }),
         },
         orderBy: {
-          createdAt: "desc",
+          createdAt: orderBy === "latest" ? "desc" : "asc",
         },
+        skip: skip,
+        take: limit,
       });
 
       if (getAllResumes.length === 0) {
@@ -76,16 +99,24 @@ export async function GET(req: Request) {
       }
     }
 
-    await client.setex(
-      cacheKey,
-      60 * 60 * 24 * 7,
-      JSON.stringify(getAllResumes),
-    );
+    const totalResume = await prisma.resume.count({
+      where: check_user_exist.role === "ADMIN" ? {} : { userId: user_id },
+    });
 
-    return NextResponse.json(
-      { message: "Fetched All Resume Successfully", getAllResumes },
-      { status: 200 },
-    );
+    const responseData = {
+      message: "Fetched All Resume Successfully",
+      getAllResumes,
+      pagination: {
+        total: totalResume,
+        page,
+        limit,
+        totalPages: Math.ceil(totalResume / limit),
+      },
+    };
+
+    await client.setex(cacheKey, 60 * 15, JSON.stringify(responseData));
+
+    return NextResponse.json(responseData, { status: 200 });
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Internal Server Error";
