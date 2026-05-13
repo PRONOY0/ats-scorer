@@ -18,24 +18,12 @@ export async function POST(req: Request) {
 
     const user_id = user.uid;
 
-    const { success, remaining, resetIn } = await rateLimit(user_id);
-
-    if (!success) {
-      return NextResponse.json(
-        {
-          message: `Limit exceeded. You can analyze 5 resumes per hour. Try again in ${Math.ceil(resetIn / 60)} minutes`,
-          remaining,
-          resetIn,
-        },
-        { status: 429 },
-      );
-    }
-
     const formData = await req.formData();
-
     const resume = formData.get("resume") as File;
     const targetRole = formData.get("targetRole") as string;
     const parsedTargetRole = targetRole as TargetRole;
+
+    const maxSize = 2 * 1024 * 1024;
 
     if (!resume) {
       return NextResponse.json(
@@ -50,8 +38,6 @@ export async function POST(req: Request) {
         { status: 400 },
       );
     }
-
-    const maxSize = 2 * 1024 * 1024;
 
     if (resume.size > maxSize) {
       return NextResponse.json(
@@ -77,6 +63,19 @@ export async function POST(req: Request) {
 
     if (cachedData) {
       return NextResponse.json(JSON.parse(cachedData));
+    }
+
+    const { success, remaining, resetIn } = await rateLimit(user_id);
+
+    if (!success) {
+      return NextResponse.json(
+        {
+          message: `Limit exceeded. You can analyze 5 resumes per hour. Try again in ${Math.ceil(resetIn / 60)} minutes`,
+          remaining,
+          resetIn,
+        },
+        { status: 429 },
+      );
     }
 
     const result = await analyzeResume(rawText, targetRole);
