@@ -1,3 +1,4 @@
+import client from "@/lib/client";
 import { prisma } from "@/lib/prisma";
 import { verifySession } from "@/services/verifyUser";
 import { cookies } from "next/headers";
@@ -9,17 +10,18 @@ export async function GET(
 ) {
   try {
     const sessionCookie = (await cookies()).get("session")?.value;
-    const { id } = await params;
-
-    if (!id) {
-      return NextResponse.json({ error: "Id is required" }, { status: 400 });
-    }
 
     if (!sessionCookie) {
       return NextResponse.json(
         { message: "Session cookie not found" },
         { status: 401 },
       );
+    }
+
+    const { id } = await params;
+
+    if (!id) {
+      return NextResponse.json({ error: "Id is required" }, { status: 400 });
     }
 
     const decode = await verifySession(sessionCookie);
@@ -30,11 +32,33 @@ export async function GET(
 
     const user_id: string = decode.uid;
 
-    const fetchResumes = await prisma.resume.findMany({
+    const cacheKey = `user:${user_id}:resume:${id}`;
+
+    const cachedData = await client.get(cacheKey);
+
+    if (cachedData) {
+      return NextResponse.json(JSON.parse(cachedData));
+    }
+
+    const fetchResumes = await prisma.resume.findFirst({
       where: {
         userId: user_id,
+        id: id,
       },
     });
+
+    if (!fetchResumes) {
+      return NextResponse.json(
+        { message: "Resume not found" },
+        { status: 404 },
+      );
+    }
+
+    await client.setex(
+      cacheKey,
+      60 * 60 * 24 * 7,
+      JSON.stringify(fetchResumes),
+    );
 
     return NextResponse.json(
       { message: "Fetched Resume", fetchResumes },

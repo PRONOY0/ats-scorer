@@ -1,3 +1,4 @@
+import client from "@/lib/client";
 import { prisma } from "@/lib/prisma";
 import { verifySession } from "@/services/verifyUser";
 import { cookies } from "next/headers";
@@ -18,45 +19,82 @@ export async function GET(req: Request) {
 
     const user_id = decode.uid;
 
-    const check_admin_exist = await prisma.user.findFirst({
+    const check_user_exist = await prisma.user.findFirst({
       where: {
         id: user_id,
-        role: "ADMIN",
       },
     });
 
-    if (!check_admin_exist) {
+    if (!check_user_exist) {
       return NextResponse.json({ message: "Not Authorized" }, { status: 403 });
     }
 
-    const getAllResumes = await prisma.resume.findMany({
-      include: {
-        user: {
-          select: {
-            name: true,
-            email: true,
-            avatar: true,
+    const cacheKey =
+      check_user_exist.role === "ADMIN"
+        ? `user:${check_user_exist.role}:resumes`
+        : `user:${user_id}:resumes`;
+
+    const cachedData = await client.get(cacheKey);
+
+    if (cachedData) {
+      return NextResponse.json(JSON.parse(cachedData));
+    }
+
+    let getAllResumes;
+
+    if (check_user_exist.role === "ADMIN") {
+      getAllResumes = await prisma.resume.findMany({
+        include: {
+          user: {
+            select: {
+              name: true,
+              email: true,
+              avatar: true,
+            },
           },
         },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
 
-    if (!getAllResumes) {
-      return NextResponse.json(
-        { message: "No resume at the current moment" },
-        { status: 200 },
-      );
+      if (getAllResumes.length === 0) {
+        return NextResponse.json(
+          { message: "No resume at the current moment" },
+          { status: 200 },
+        );
+      }
+    } else {
+      getAllResumes = await prisma.resume.findMany({
+        where: {
+          userId: user_id,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+
+      if (getAllResumes.length === 0) {
+        return NextResponse.json(
+          { message: "No resume at the current moment" },
+          { status: 200 },
+        );
+      }
     }
+
+    await client.setex(
+      cacheKey,
+      60 * 60 * 24 * 7,
+      JSON.stringify(getAllResumes),
+    );
 
     return NextResponse.json(
       { message: "Fetched All Resume Successfully", getAllResumes },
       { status: 200 },
     );
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Internal Server Error";
+    const message =
+      error instanceof Error ? error.message : "Internal Server Error";
     return NextResponse.json({ message }, { status: 500 });
   }
 }

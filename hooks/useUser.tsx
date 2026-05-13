@@ -25,17 +25,13 @@ const UserContext = createContext<UserContextType>({
 });
 
 export function UserProvider({ children }: { children: ReactNode }) {
-  console.log("1. UserProvider rendered");
   const [user, setUser] = useState<User | null>(null);
   const [dbUser, setDbUser] = useState<DbUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    console.log("2. useEffect ran");
-    console.log("3. auth object:", auth);
 
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
-      console.log("4. onAuthStateChanged fired, user:", u);
       setUser(u);
 
       if (u) {
