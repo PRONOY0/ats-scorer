@@ -2,46 +2,167 @@ import { prompt } from "@/services/prompt";
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 
+type ResumeProject = {
+  tier: "TIER_0" | "TIER_1" | "TIER_2" | "TIER_3" | "TIER_4";
+  name: string;
+  description: string;
+  techStack: string[];
+};
+
+type ResumeExperience = {
+  company: string | null;
+  role: string;
+  duration: string | null;
+  highlights: string[];
+};
+
+type ScoreBreakdown = {
+  proofOfImpact: number;
+  projectQuality: number;
+  keywordMatch: number;
+  workExperience: number;
+  education: number;
+  structure: number;
+};
+
+type ParsedLinks = {
+  github?: string | null;
+  portfolio?: string | null;
+  linkedin?: string | null;
+};
+
+type ResumeAnalysisResult = {
+  atsScore: number;
+  scoreBreakdown: ScoreBreakdown;
+  extractedText: {
+    projects?: ResumeProject[];
+    experience?: ResumeExperience[];
+    links?: ParsedLinks;
+  };
+};
+
 export async function analyzeResume(rawText: string, targetRole: string) {
-  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${GROQ_API_KEY}`,
+  const response = await fetch(
+    "https://api.groq.com/openai/v1/chat/completions",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${GROQ_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: "llama-3.3-70b-versatile",
+        temperature: 0.1,
+        response_format: { type: "json_object" },
+        messages: [
+          {
+            role: "system",
+            content: prompt(rawText, targetRole),
+          },
+          {
+            role: "user",
+            content: "Analyze the resume and return only the JSON object.",
+          },
+        ],
+      }),
     },
-    body: JSON.stringify({
-      model: "llama-3.3-70b-versatile",
-      temperature: 0.1,
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: prompt(rawText, targetRole) },
-        { role: "user", content: "Analyze the resume and return only the JSON object." },
-      ],
-    }),
-  });
+  );
 
   if (!response.ok) {
     throw new Error(`Groq error: ${response.statusText}`);
   }
 
   const data = await response.json();
-  const raw = data.choices[0].message.content;
+
+  const raw = data.choices?.[0]?.message?.content ?? "";
+
   const cleaned = raw.replace(/^```json\s*|^```\s*|```$/gm, "").trim();
 
   try {
-    const result = JSON.parse(cleaned);
+    const result: ResumeAnalysisResult = JSON.parse(cleaned);
 
-    if (result.scoreBreakdown) {
-      result.scoreBreakdown.keywordMatch = Math.min(result.scoreBreakdown.keywordMatch, 30);
-      result.scoreBreakdown.workExperience = Math.min(result.scoreBreakdown.workExperience, 25);
-      result.scoreBreakdown.projects = Math.min(result.scoreBreakdown.projects, 20);
-      result.scoreBreakdown.education = Math.min(result.scoreBreakdown.education, 10);
-      result.scoreBreakdown.structure = Math.min(result.scoreBreakdown.structure, 10);
-      result.scoreBreakdown.quantifiedAchievements = Math.min(result.scoreBreakdown.quantifiedAchievements, 5);
+    if (result.scoreBreakdown && result.extractedText) {
+      const breakdown = result.scoreBreakdown;
+      const links = result.extractedText?.links;
 
-      result.atsScore = Object.values(result.scoreBreakdown).reduce(
-        (a: number, b: unknown) => a + (b as number), 0
+      const missingAllLinks =
+        !links?.github && !links?.linkedin && !links?.portfolio;
+
+      const rawHasLinks =
+        /(github\.com|linkedin\.com|https?:\/\/)/i.test(rawText);
+
+      if (!rawHasLinks && missingAllLinks) {
+        breakdown.structure = Math.min(breakdown.structure, 2);
+      }
+
+      const projects = result.extractedText.projects ?? [];
+
+      // ---------- PROJECT ANALYSIS ----------
+
+      const allTier0 =
+        projects.length > 0 &&
+        projects.every((project) => project.tier === "TIER_0");
+
+      // ---------- HARD SAFETY CAPS ----------
+
+      if (allTier0) {
+        breakdown.projectQuality = Math.min(breakdown.projectQuality, 3);
+
+        result.atsScore = Math.min(result.atsScore, 40);
+      }
+
+      // ---------- IMPACT VALIDATION ----------
+
+      const experiences = result.extractedText.experience ?? [];
+
+      const impactText = JSON.stringify({
+        projects,
+        experiences,
+      });
+
+      const hasQuantifiedImpact =
+        /\d+%|\d+\+|#\d+|\$\d+|\d+\s(users|downloads|clients|customers|stars|forks|visitors|clicks|countries)/i.test(
+          impactText,
+        );
+
+      if (!hasQuantifiedImpact) {
+        breakdown.proofOfImpact = Math.min(breakdown.proofOfImpact, 14);
+      }
+
+      // ---------- SCORE CLAMPING ----------
+
+      breakdown.proofOfImpact = Math.max(
+        0,
+        Math.min(breakdown.proofOfImpact, 30),
       );
+
+      breakdown.projectQuality = Math.max(
+        0,
+        Math.min(breakdown.projectQuality, 25),
+      );
+
+      breakdown.keywordMatch = Math.max(
+        0,
+        Math.min(breakdown.keywordMatch, 20),
+      );
+
+      breakdown.workExperience = Math.max(
+        0,
+        Math.min(breakdown.workExperience, 15),
+      );
+
+      breakdown.education = Math.max(0, Math.min(breakdown.education, 5));
+
+      breakdown.structure = Math.max(0, Math.min(breakdown.structure, 5));
+
+      // ---------- RECALCULATE ATS SCORE ----------
+
+      result.atsScore = Object.values(breakdown).reduce(
+        (total, value) => total + value,
+        0,
+      );
+
+      result.atsScore = Math.max(0, Math.min(result.atsScore, 100));
     }
 
     return result;

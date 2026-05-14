@@ -90,6 +90,10 @@ export async function POST(req: Request) {
 
     const result = await analyzeResume(rawText, targetRole);
 
+    console.log(result);
+
+    console.log(result.atsScore);
+
     const resumeData = {
       rawText,
       atsScore: result.atsScore,

@@ -22,7 +22,7 @@ export const roleRules: Record<string, string> = {
 
 **CRITICAL SCORING NOTE:**
 If the resume has ZERO of these: React, Vue, Angular, Next.js, HTML, CSS, JavaScript —
-keywordMatch MUST be scored 0–5 out of 30. No frontend stack means no alignment.
+keywordMatch MUST be scored 0–5 out of 20. No frontend stack means no alignment.
 `,
 
   BACKEND_DEVELOPER: `
