@@ -8,6 +8,7 @@ import { generateHash } from "@/services/generateHash";
 import { rateLimit } from "@/lib/rateLimiter";
 import { getAuthUser } from "@/services/verifyUser";
 import { analyzeSchema } from "@/services/validation";
+import { ResumeAnalysisResult } from "@/types/resume";
 
 export async function POST(req: Request) {
   try {
@@ -88,11 +89,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const result = await analyzeResume(rawText, targetRole);
-
-    console.log(result);
-
-    console.log(result.atsScore);
+    const result:ResumeAnalysisResult = await analyzeResume(rawText, targetRole);
 
     const resumeData = {
       rawText,

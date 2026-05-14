@@ -1,45 +1,7 @@
 import { prompt } from "@/services/prompt";
+import { ResumeAnalysisResult } from "@/types/resume";
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
-
-type ResumeProject = {
-  tier: "TIER_0" | "TIER_1" | "TIER_2" | "TIER_3" | "TIER_4";
-  name: string;
-  description: string;
-  techStack: string[];
-};
-
-type ResumeExperience = {
-  company: string | null;
-  role: string;
-  duration: string | null;
-  highlights: string[];
-};
-
-type ScoreBreakdown = {
-  proofOfImpact: number;
-  projectQuality: number;
-  keywordMatch: number;
-  workExperience: number;
-  education: number;
-  structure: number;
-};
-
-type ParsedLinks = {
-  github?: string | null;
-  portfolio?: string | null;
-  linkedin?: string | null;
-};
-
-type ResumeAnalysisResult = {
-  atsScore: number;
-  scoreBreakdown: ScoreBreakdown;
-  extractedText: {
-    projects?: ResumeProject[];
-    experience?: ResumeExperience[];
-    links?: ParsedLinks;
-  };
-};
 
 export async function analyzeResume(rawText: string, targetRole: string) {
   const response = await fetch(
