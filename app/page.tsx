@@ -7,6 +7,7 @@ import { useUser } from '@/hooks/useUser';
 import GoogleAuthButton from '@/components/AuthButton';
 import axios from 'axios';
 import { analyzeResume } from '@/lib/api';
+import { useRouter } from 'next/navigation';
 
 
 const TARGET_ROLES = [
@@ -31,6 +32,7 @@ const ANALYSIS_STEPS = [
 
 export default function HomePage() {
   const { user, loading } = useUser();
+  const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
   const [targetRole, setTargetRole] = useState(TARGET_ROLES[0]);
   const [isDragging, setIsDragging] = useState(false);
@@ -113,7 +115,9 @@ export default function HomePage() {
 
         setTimeout(() => {
           setIsAnalyzing(false);
-          setResult(res.data.updateResume);
+          setResult(res.data);
+          console.log(res.data);
+          router.push(`/results/${res.data.updateResume.id}`);
         }, 600);
       } catch (err) {
         setIsAnalyzing(false);

@@ -4,49 +4,9 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { ChevronLeft, Zap, Target, TrendingUp, AlertTriangle, CheckCircle2, ChevronRight, Check, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-
-const MOCK_DATA = {
-    "id": "cmp5om2j20003tbj0xei9t001",
-    "userId": "Y1AOWJyixDgs7JrKwYNf8sI9KyL2",
-    "status": "COMPLETED",
-    "title": "BACKEND_DEVELOPER",
-    "atsScore": 57,
-    "scoreBreakdown": {
-        "education": 5,
-        "structure": 2,
-        "keywordMatch": 10,
-        "proofOfImpact": 14,
-        "projectQuality": 18,
-        "workExperience": 8
-    },
-    "targetRole": "BACKEND_DEVELOPER",
-    "extractedText": {
-        "skills": ["C++", "Python", "Java Script", "Type Script", "Next Js", "Node Js", "Express Js", "Mongo DB", "Postgre SQL", "Prisma", "Redis", "Supabase", "Git"],
-        "projects": [
-            { "name": "Testimonial Hub", "tier": "TIER_1" },
-            { "name": "Coding Club Platform", "tier": "TIER_1" },
-            { "name": "3D Portfolio Website", "tier": "TIER_0" },
-            { "name": "URL Shortener", "tier": "TIER_1" }
-        ]
-    },
-    "improvementMessage": {
-        "overall": "The candidate has a strong foundation in backend development, but lacks quantified achievements and work experience.",
-        "topAction": "Focus on adding quantified achievements and impact statements to the resume, and consider gaining more work experience.",
-        "roleAlignment": "The candidate's skills and experience align with the backend developer role, but need improvement in certain areas."
-    },
-    "strengths": [
-        { "title": "Backend Development", "description": "Strong experience with backend technologies like Node.js, Express.js, and MongoDB." },
-        { "title": "Project Management", "description": "Ability to manage multiple projects with varying technologies and complexities." }
-    ],
-    "weaknesses": [
-        { "title": "Lack of Quantified Achievements", "description": "Resume lacks quantified achievements and impact statements for projects." },
-        { "title": "Limited Work Experience", "description": "Limited work experience, with no full-time or internship experience mentioned." }
-    ],
-    "suggestions": [
-        { "area": "Resume Structure", "priority": "HIGH", "suggestion": "Improve resume structure and formatting for better readability." },
-        { "area": "Project Description", "priority": "MEDIUM", "suggestion": "Add more detailed descriptions of projects, including technologies used and achievements." }
-    ]
-};
+import axios from 'axios';
+import { fetchResume_by_id } from '@/lib/api';
+import { Resume } from '@/lib/generated/prisma';
 
 const BREAKDOWN_MAX_SCORES: Record<string, number> = {
     education: 10,
@@ -58,25 +18,106 @@ const BREAKDOWN_MAX_SCORES: Record<string, number> = {
 };
 
 export default function ResultPage() {
-  const router = useRouter();
+    const router = useRouter();
     const params = useParams();
     const id = params.id as string;
     const [displayScore, setDisplayScore] = useState(0);
-    const data = MOCK_DATA; // In a real app, fetch based on 'id'
+    const [result, setResult] = useState<Resume | null>(null);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        const fetchResumeResult = async () => {
+            try {
+                const res = await axios.get(fetchResume_by_id(id), {
+                    withCredentials: true,
+                });
+                console.log(res.data);
+                setResult(res.data);
+                console.log(result);
+                setLoading(false);
+            } catch {
+                setLoading(false);
+            }
+        };
+        fetchResumeResult();
+    }, [id]);
+
+
+    useEffect(() => {
+        if (!result) {
+            return;
+        }
+
         let current = 0;
+
         const interval = setInterval(() => {
             current += 1;
             setDisplayScore(current);
-            if (current >= data.atsScore) clearInterval(interval);
+            if (current >= result.atsScore) clearInterval(interval);
         }, 20);
         return () => clearInterval(interval);
-    }, [data.atsScore]);
+    }, [result]);
+
+    const improvementMessage = result?.improvementMessage as {
+        overall: string;
+        roleAlignment: string;
+        topAction: string;
+    }
+
+    const scoreBreakdown = result?.scoreBreakdown as {
+        proofImpact: number;
+        projectQuality: number;
+        keywordMatch: number;
+        workExperience: number;
+        education: number;
+        structure: number;
+    }
+
+    const extractedText = result?.extractedText as {
+        skills: string[];
+
+        languages: string[];
+
+        frameworks: string[];
+
+        tools: string[];
+
+        projects: {
+            name: string;
+            tier: string;
+            techStack: string[];
+            description: string;
+        }[];
+
+        experience: {
+            company: string;
+            role: string;
+            duration: string | null;
+            highlights: string[];
+        }[];
+
+        education: {
+            degree: string;
+            instituition: string;
+            year: string | null;
+        }[];
+    }
+
+    if (loading || !result) return (
+        <div style={{ minHeight: "100vh", background: "#060606", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ width: 36, height: 36, border: "2px solid #1a1a1a", borderTop: "2px solid #CCFF00", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        </div>
+    );
+
+    const strengths = result?.strengths as { title: string; description: string }[];
+    const weaknesses = result?.weaknesses as { title: string; description: string }[];
+    const suggestions = result?.suggestions as { priority: "HIGH" | "MEDIUM" | "LOW"; area: string; suggestion: string; }[];
 
     return (
         <div className="min-h-screen relative overflow-hidden bg-[#060606] text-white font-sans select-none">
-            <style dangerouslySetInnerHTML={{ __html: `
+            <style dangerouslySetInnerHTML={{
+                __html: `
                 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap');
 
                 body { font-family: 'Inter', sans-serif; background-color: #060606; color: white; margin: 0; }
@@ -135,8 +176,8 @@ export default function ResultPage() {
             <div className="fixed orb-bg-2" />
 
             {/* Layout Wrapper */}
-            <div className="relative z-10 flex flex-col lg:flex-row h-screen max-w-[1600px] mx-auto">
-                
+            <div className="relative z-10 flex flex-col lg:flex-row h-screen max-w-1600 mx-auto">
+
                 {/* LEFT PANE - SCORE & OVERVIEW */}
                 <div className="w-full lg:w-[35%] xl:w-[30%] h-full flex flex-col p-6 lg:p-10 border-b lg:border-b-0 lg:border-r border-white/5 relative glass-panel shrink-0">
                     <button onClick={() => router.push('/')} className="self-start mb-8 text-[#a1a1aa] hover:text-white flex items-center gap-2 font-mono text-xs uppercase tracking-widest transition-colors group">
@@ -149,7 +190,7 @@ export default function ResultPage() {
                         </div>
 
                         <h1 className="text-4xl font-black uppercase tracking-tight mb-2 leading-none">
-                            {data.targetRole.replace(/_/g, ' ')}
+                            {result?.targetRole.replace(/_/g, ' ')}
                         </h1>
                         <p className="font-mono text-sm text-[#a1a1aa] mb-12 uppercase tracking-widest">
                             ATS Alignment Report
@@ -159,13 +200,13 @@ export default function ResultPage() {
                         <div className="relative w-64 h-64 mx-auto mb-12 flex items-center justify-center">
                             <svg className="absolute inset-0 w-full h-full transform -rotate-90" viewBox="0 0 100 100">
                                 <circle cx="50" cy="50" r="46" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="4" />
-                                <circle 
-                                    cx="50" cy="50" r="46" fill="none" stroke={displayScore < 40 ? '#FF3366' : displayScore < 70 ? '#FFB800' : '#CCFF00'} 
-                                    strokeWidth="4" 
-                                    strokeDasharray="289" 
+                                <circle
+                                    cx="50" cy="50" r="46" fill="none" stroke={displayScore < 40 ? '#FF3366' : displayScore < 70 ? '#FFB800' : '#CCFF00'}
+                                    strokeWidth="4"
+                                    strokeDasharray="289"
                                     strokeDashoffset={289 - (289 * displayScore) / 100}
                                     strokeLinecap="round"
-                                    className="transition-all duration-[20ms] ease-linear"
+                                    className="transition-all duration-20 ease-linear"
                                 />
                             </svg>
                             <div className="flex flex-col items-center">
@@ -180,11 +221,13 @@ export default function ResultPage() {
                         {/* AI Overall Insight */}
                         <div className="bg-black/40 border border-white/5 rounded-xl p-5 relative overflow-hidden">
                             <div className="absolute top-0 left-0 w-1 h-full bg-[#CCFF00]" />
+
                             <h3 className="font-mono text-xs uppercase tracking-widest text-[#a1a1aa] mb-2 flex items-center gap-2">
                                 <Zap size={12} className="text-[#CCFF00]" /> AI Insight
                             </h3>
+
                             <p className="text-sm text-zinc-300 leading-relaxed">
-                                {data.improvementMessage.overall}
+                                {improvementMessage?.overall}
                             </p>
                         </div>
                     </div>
@@ -192,7 +235,7 @@ export default function ResultPage() {
 
                 {/* RIGHT PANE - DETAILED STATS */}
                 <div className="w-full lg:w-[65%] xl:w-[70%] h-full overflow-y-auto custom-scrollbar p-6 lg:p-12 pb-32">
-                    
+
                     {/* Top Action Box */}
                     <div className="glass-panel rounded-2xl p-6 lg:p-8 mb-8 animate-item-2 flex flex-col md:flex-row items-center gap-6 border-l-4" style={{ borderLeftColor: '#CCFF00' }}>
                         <div className="w-12 h-12 rounded-full bg-[#CCFF00]/10 flex items-center justify-center shrink-0">
@@ -200,7 +243,7 @@ export default function ResultPage() {
                         </div>
                         <div>
                             <h2 className="text-xl font-bold mb-2">Priority Action</h2>
-                            <p className="text-[#a1a1aa] leading-relaxed">{data.improvementMessage.topAction}</p>
+                            <p className="text-[#a1a1aa] leading-relaxed">{improvementMessage?.topAction}</p>
                         </div>
                     </div>
 
@@ -208,13 +251,13 @@ export default function ResultPage() {
                     <h3 className="font-mono text-sm uppercase tracking-widest text-white mb-6 animate-item-2 flex items-center gap-2">
                         <TrendingUp size={16} className="text-[#a1a1aa]" /> Evaluation Metrics
                     </h3>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-12 animate-item-2">
-                        {Object.entries(data.scoreBreakdown).map(([key, value]) => {
+                        {Object.entries(scoreBreakdown).map(([key, value]) => {
                             const max = BREAKDOWN_MAX_SCORES[key] || 20;
                             const percentage = (value / max) * 100;
                             const formatKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-                            
+
                             return (
                                 <div key={key} className="bg-[#18181b]/40 border border-white/5 p-5 rounded-xl">
                                     <div className="flex justify-between items-end mb-3">
@@ -222,10 +265,10 @@ export default function ResultPage() {
                                         <span className="font-mono text-xs text-[#a1a1aa]">{value}/{max}</span>
                                     </div>
                                     <div className="w-full bg-black rounded-full h-1.5 overflow-hidden">
-                                        <div 
+                                        <div
                                             className="h-full rounded-full transition-all duration-1000 ease-out"
-                                            style={{ 
-                                                width: `${percentage}%`, 
+                                            style={{
+                                                width: `${percentage}%`,
                                                 backgroundColor: percentage > 70 ? '#CCFF00' : percentage > 40 ? '#FFB800' : '#FF3366'
                                             }}
                                         />
@@ -243,7 +286,7 @@ export default function ResultPage() {
                                 <Check size={14} /> Strengths Detected
                             </h3>
                             <div className="flex flex-col gap-4">
-                                {data.strengths.map((s, i) => (
+                                {strengths.map((s, i) => (
                                     <div key={i} className="flex gap-4">
                                         <div className="w-1.5 h-1.5 rounded-full bg-[#CCFF00] mt-2 shrink-0 shadow-[0_0_8px_rgba(204,255,0,0.8)]" />
                                         <div>
@@ -261,7 +304,7 @@ export default function ResultPage() {
                                 <X size={14} /> Critical Gaps
                             </h3>
                             <div className="flex flex-col gap-4">
-                                {data.weaknesses.map((w, i) => (
+                                {weaknesses.map((w, i) => (
                                     <div key={i} className="flex gap-4">
                                         <div className="w-1.5 h-1.5 rounded-full bg-[#FF3366] mt-2 shrink-0 shadow-[0_0_8px_rgba(255,51,102,0.8)]" />
                                         <div>
@@ -279,14 +322,16 @@ export default function ResultPage() {
                         <AlertTriangle size={16} className="text-[#FFB800]" /> Recommended Edits
                     </h3>
                     <div className="flex flex-col gap-3 mb-12 animate-item-4">
-                        {data.suggestions.map((sug, i) => (
-                            <div key={i} className="glass-panel p-5 rounded-xl border border-white/5 flex flex-col sm:flex-row sm:items-center gap-4 hover:bg-white/[0.02] transition-colors">
+                        {suggestions.map((sug, i) => (
+                            <div key={i} className="glass-panel p-5 rounded-xl border border-white/5 flex flex-col sm:flex-row sm:items-center gap-4 hover:bg-white/2 transition-colors">
                                 <div className={`inline-flex items-center justify-center px-2.5 py-1 rounded font-mono text-[10px] tracking-wider uppercase shrink-0 w-20 ${sug.priority === 'HIGH' ? 'bg-[#FF3366]/10 text-[#FF3366]' : 'bg-[#FFB800]/10 text-[#FFB800]'}`}>
                                     {sug.priority}
                                 </div>
                                 <div className="flex-1">
                                     <p className="text-sm font-medium text-white mb-1">{sug.area}</p>
-                                    <p className="text-xs text-[#a1a1aa]">{sug.suggestion}</p>
+                                    <p className="text-xs text-[#a1a1aa]">
+                                        {sug.suggestion}
+                                    </p>
                                 </div>
                                 <button className="hidden sm:flex w-8 h-8 rounded-full bg-white/5 items-center justify-center hover:bg-white/10 transition-colors text-white shrink-0">
                                     <ChevronRight size={14} />
@@ -299,11 +344,11 @@ export default function ResultPage() {
                     <div className="glass-panel rounded-2xl p-6 lg:p-8 animate-item-4 relative overflow-hidden">
                         <div className="absolute top-0 right-0 p-32 bg-white/1 rounded-full filter blur-3xl" />
                         <h3 className="font-mono text-xs uppercase tracking-widest text-[#a1a1aa] mb-6">Extracted Profile Data</h3>
-                        
+
                         <div className="mb-6">
                             <span className="text-xs text-zinc-500 uppercase font-bold tracking-wider block mb-3">Detected Skills</span>
                             <div className="flex flex-wrap gap-2">
-                                {data.extractedText.skills.map(skill => (
+                                {extractedText.skills.map(skill => (
                                     <span key={skill} className="px-3 py-1.5 rounded-full bg-black/40 border border-[#27272a] text-xs text-white">
                                         {skill}
                                     </span>
@@ -314,16 +359,23 @@ export default function ResultPage() {
                         <div>
                             <span className="text-xs text-zinc-500 uppercase font-bold tracking-wider block mb-3">Portfolio Projects</span>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                {data.extractedText.projects.map((proj, idx) => (
-                                    <div key={idx} className="p-3 rounded-lg bg-black/40 border border-[#27272a] flex justify-between items-center">
-                                        <span className="text-sm font-medium">{proj.name}</span>
-                                        <span className="font-mono text-[10px] text-[#CCFF00] bg-[#CCFF00]/10 px-2 py-0.5 rounded">{proj.tier.replace('_', ' ')}</span>
-                                    </div>
-                                ))}
+                                {
+                                    extractedText.projects.map((project,idx) => {
+                                        return (
+                                            <div key={idx} className="p-3 rounded-lg bg-black/40 border border-[#27272a] flex justify-between items-center">
+                                                <span className="text-sm font-medium">
+                                                    {project.name}
+                                                </span>
+                                                <span className="font-mono text-[10px] text-[#CCFF00] bg-[#CCFF00]/10 px-2 py-0.5 rounded">{project.tier.replace('_', ' ')}
+                                                </span>
+                                            </div>
+                                        )
+                                    })
+                                }
                             </div>
                         </div>
                     </div>
-                    
+
                 </div>
             </div>
         </div>

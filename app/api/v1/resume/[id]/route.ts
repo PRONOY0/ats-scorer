@@ -50,10 +50,7 @@ export async function GET(
       JSON.stringify(fetchResumes),
     );
 
-    return NextResponse.json(
-      { message: "Fetched Resume", fetchResumes },
-      { status: 200 },
-    );
+    return NextResponse.json(fetchResumes, { status: 200 });
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Internal Server Error";
