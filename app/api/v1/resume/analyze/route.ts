@@ -1,5 +1,5 @@
 import client from "@/lib/client";
-import { ResumeStatus } from "@/lib/generated/prisma";
+import { ResumeStatus, TargetRole } from "@/lib/generated/prisma";
 import { analyzeResume } from "@/lib/groq";
 import { prisma } from "@/lib/prisma";
 import { pdfToRawText } from "@/services/extractPdfText";
@@ -11,6 +11,8 @@ import { analyzeSchema } from "@/services/validation";
 import { ResumeAnalysisResult } from "@/types/resume";
 
 export async function POST(req: Request) {
+  let user_id: string | undefined;
+  let parsedTargetRole: TargetRole | undefined;
   try {
     const { user, error } = await getAuthUser();
 
@@ -18,14 +20,14 @@ export async function POST(req: Request) {
       return error;
     }
 
-    const user_id = user.uid;
+    user_id = user.uid;
 
     const formData = await req.formData();
     const resume = formData.get("resume") as File;
     const targetRole = formData.get("targetRole") as string;
 
     const maxSize = 2 * 1024 * 1024;
-    
+
     if (!resume) {
       return NextResponse.json(
         { message: "Resume file is required" },
@@ -62,7 +64,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const parsedTargetRole = validation.data.targetRole;
+    parsedTargetRole = validation.data.targetRole;
 
     const rawText = await pdfToRawText(resume);
 
@@ -89,7 +91,10 @@ export async function POST(req: Request) {
       );
     }
 
-    const result:ResumeAnalysisResult = await analyzeResume(rawText, targetRole);
+    const result: ResumeAnalysisResult = await analyzeResume(
+      rawText,
+      targetRole,
+    );
 
     const resumeData = {
       rawText,
@@ -147,6 +152,22 @@ export async function POST(req: Request) {
       { status: 200 },
     );
   } catch (error) {
+    try {
+      if (user_id && parsedTargetRole) {
+        const existingResume = await prisma.resume.findFirst({
+          where: { userId: user_id, targetRole: parsedTargetRole },
+        });
+        if (existingResume) {
+          await prisma.resume.update({
+            where: { id: existingResume.id },
+            data: { status: ResumeStatus.FAILED },
+          });
+        }
+      }
+    } catch {
+      // silent
+    }
+
     const message =
       error instanceof Error ? error.message : "Internal Server Error";
     return NextResponse.json({ message }, { status: 500 });
