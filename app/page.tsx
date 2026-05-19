@@ -98,7 +98,7 @@ export default function HomePage() {
             setCompletedSteps(prev => new Set(prev).add(stepIdx));
             stepIdx++;
           }
-        }, 8000);
+        }, 18000);
 
         const formData = new FormData();
         formData.append("resume", file);
@@ -116,8 +116,7 @@ export default function HomePage() {
         setTimeout(() => {
           setIsAnalyzing(false);
           setResult(res.data);
-          console.log(res.data);
-          router.push(`/results/${res.data.updateResume.id}`);
+          router.push(`/results/${res.data.id}`);
         }, 600);
       } catch (err) {
         setIsAnalyzing(false);
@@ -136,21 +135,7 @@ export default function HomePage() {
     setIsAnalyzing(false);
     setCompletedSteps(new Set());
     setActiveStep(0);
-    setDisplayScore(0);
   };
-
-  // Animate the final score
-  const [displayScore, setDisplayScore] = useState(0);
-  useEffect(() => {
-    if (!result || isAnalyzing) return;
-    let current = 0;
-    const interval = setInterval(() => {
-      current += 1;
-      setDisplayScore(current);
-      if (current >= result.atsScore) clearInterval(interval);
-    }, 15);
-    return () => clearInterval(interval);
-  }, [result, isAnalyzing]);
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-[#060606] text-white flex flex-col font-sans select-none pb-24">

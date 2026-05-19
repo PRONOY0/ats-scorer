@@ -126,12 +126,6 @@ export async function POST(req: Request) {
         },
         data: resumeData,
       });
-
-      await client.setex(
-        cacheKey,
-        60 * 60 * 24 * 7,
-        JSON.stringify(updateResume),
-      );
     } else {
       updateResume = await prisma.resume.create({
         data: {
@@ -139,18 +133,23 @@ export async function POST(req: Request) {
           userId: user_id,
         },
       });
-
-      await client.setex(
-        cacheKey,
-        60 * 60 * 24 * 7,
-        JSON.stringify(updateResume),
-      );
     }
 
-    return NextResponse.json(
-      { message: "Extracted", updateResume },
-      { status: 200 },
+    await client.setex(
+      cacheKey,
+      60 * 60 * 24 * 7,
+      JSON.stringify(updateResume),
     );
+
+    const resumeCacheKey = `user:${user_id}:resume:${updateResume.id}`;
+    
+    await client.setex(
+      resumeCacheKey,
+      60 * 60 * 24 * 7,
+      JSON.stringify(updateResume),
+    );
+
+    return NextResponse.json(updateResume, { status: 200 });
   } catch (error) {
     try {
       if (user_id && parsedTargetRole) {

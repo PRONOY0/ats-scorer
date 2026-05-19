@@ -31,9 +31,7 @@ export default function ResultPage() {
                 const res = await axios.get(fetchResume_by_id(id), {
                     withCredentials: true,
                 });
-                console.log(res.data);
                 setResult(res.data);
-                console.log(result);
                 setLoading(false);
             } catch {
                 setLoading(false);
@@ -348,8 +346,8 @@ export default function ResultPage() {
                         <div className="mb-6">
                             <span className="text-xs text-zinc-500 uppercase font-bold tracking-wider block mb-3">Detected Skills</span>
                             <div className="flex flex-wrap gap-2">
-                                {extractedText.skills.map(skill => (
-                                    <span key={skill} className="px-3 py-1.5 rounded-full bg-black/40 border border-[#27272a] text-xs text-white">
+                                {extractedText.skills.map((skill,index) => (
+                                    <span key={index} className="px-3 py-1.5 rounded-full bg-black/40 border border-[#27272a] text-xs text-white">
                                         {skill}
                                     </span>
                                 ))}
