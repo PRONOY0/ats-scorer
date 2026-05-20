@@ -124,7 +124,10 @@ export async function POST(req: Request) {
         where: {
           id: existingResume.id,
         },
-        data: resumeData,
+        data: {
+          ...resumeData,
+          scanCount: { increment: 1 }
+        },
       });
     } else {
       updateResume = await prisma.resume.create({

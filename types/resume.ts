@@ -34,7 +34,7 @@ type ResumeExperience = {
   highlights: string[];
 };
 
-type ScoreBreakdown = {
+export type ScoreBreakdown = {
   proofOfImpact: number;
   projectQuality: number;
   keywordMatch: number;

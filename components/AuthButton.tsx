@@ -1,6 +1,5 @@
 "use client";
 
-import { FcGoogle } from "react-icons/fc";
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useUser } from "@/hooks/useUser";
@@ -15,6 +14,7 @@ export default function GoogleAuthButton({onSuccess}: {onSuccess?: () => void}) 
 
     // 2. If user exists → already signed in → show nothing
     if (user) return null;
+
 
     // 3. Otherwise show Google button
     const signInWithGoogle = async () => {

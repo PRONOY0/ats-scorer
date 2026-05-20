@@ -64,6 +64,7 @@ model Resume {
 
   targetRole TargetRole
 
+  scanCount          Int    @default(1)
   rawText            String
   extractedText      Json
   improvementMessage Json
@@ -75,5 +76,5 @@ model Resume {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([userId,targetRole])
+  @@index([userId, targetRole])
 }
