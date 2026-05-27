@@ -44,16 +44,16 @@ const getScoreColor = (score: number) => {
 export default function HistoryPage() {
   const router = useRouter();
 
-  const [resumes,    setResumes]    = useState<Resume[]>([]);
+  const [resumes, setResumes] = useState<Resume[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
-  const [loading,    setLoading]    = useState(true); 
-  const [error,      setError]      = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const [page,    setPage]    = useState(1);
-  const [limit,   setLimit]   = useState(6);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(6);
   const [orderBy, setOrderBy] = useState<'latest' | 'oldest'>('latest');
 
-  
+
   useEffect(() => {
     let cancelled = false;
 
@@ -77,9 +77,9 @@ export default function HistoryPage() {
       } catch (err) {
         if (cancelled) return;
         console.warn('API request failed.', err);
-        setError('Failed to load resumes. Please try again.'); 
+        setError('Failed to load resumes. Please try again.');
       } finally {
-        if (!cancelled) setLoading(false); 
+        if (!cancelled) setLoading(false);
       }
     };
 
@@ -93,7 +93,7 @@ export default function HistoryPage() {
     if (pagination && page < pagination.totalPages) setPage(p => p + 1);
   };
 
-  
+
   return (
     <>
       <style>{`
@@ -112,7 +112,7 @@ export default function HistoryPage() {
       `}</style>
 
       <div
-        className="min-h-screen relative text-white select-none pb-24 overflow-y-auto"
+        className="min-h-screen relative text-white select-none pb-24 overflow-y-auto p-16"
         style={{
           backgroundColor: '#060606',
           backgroundImage: 'radial-gradient(rgba(204,255,0,0.05) 1px, transparent 0)',
@@ -130,10 +130,10 @@ export default function HistoryPage() {
           }}
         />
 
-        
+
         <div className="relative z-10 max-w-7xl mx-auto p-6 md:p-10 min-h-screen flex flex-col">
 
-          
+
           <div className="animate-item-1 flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
             <div>
               <button
@@ -150,7 +150,7 @@ export default function HistoryPage() {
               </p>
             </div>
 
-            
+
             <div
               className="p-4 rounded-2xl flex flex-wrap items-center gap-4 self-start md:self-end"
               style={{
@@ -167,7 +167,7 @@ export default function HistoryPage() {
                 <span className="font-mono text-xs uppercase tracking-widest text-zinc-400">Sort &amp; Show:</span>
               </div>
 
-              
+
               <div className="relative group">
                 <select
                   value={orderBy}
@@ -180,14 +180,14 @@ export default function HistoryPage() {
                 <Search size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none group-hover:text-[#CCFF00] transition-colors" />
               </div>
 
-              
+
               <div className="relative group">
                 <select
                   value={limit}
                   onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}
                   className="appearance-none bg-[#18181b] border border-[#27272a] text-white pl-4 pr-10 py-2 rounded-lg font-mono text-xs uppercase focus:border-[#CCFF00] transition-colors cursor-pointer outline-none hover:border-[#CCFF00]/50"
                 >
-                  <option value="6"  className="bg-[#18181b]">6 / Page</option>
+                  <option value="6" className="bg-[#18181b]">6 / Page</option>
                   <option value="12" className="bg-[#18181b]">12 / Page</option>
                   <option value="24" className="bg-[#18181b]">24 / Page</option>
                 </select>
@@ -196,21 +196,21 @@ export default function HistoryPage() {
             </div>
           </div>
 
-          
+
           {loading && (
             <div className="flex-1 flex items-center justify-center min-h-100">
               <Activity size={32} className="animate-pulse" style={{ color: '#CCFF00' }} />
             </div>
           )}
 
-          
+
           {!loading && error && (
             <div className="flex-1 flex flex-col items-center justify-center text-center">
               <p className="text-red-400 font-mono text-sm uppercase tracking-widest">{error}</p>
             </div>
           )}
 
-          
+
           {!loading && !error && resumes.length > 0 && (
             <div className="animate-item-2 flex-1 flex flex-col">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
@@ -230,7 +230,7 @@ export default function HistoryPage() {
                         WebkitBackdropFilter: 'blur(24px)',
                       }}
                     >
-                      
+
                       <div className="flex justify-between items-start mb-6">
                         <div className="bg-black/50 border border-white/10 px-3 py-1.5 rounded-md flex items-center gap-2">
                           <Target size={12} className="text-zinc-400" />
@@ -246,7 +246,7 @@ export default function HistoryPage() {
                         </div>
                       </div>
 
-                      
+
                       <div className="mt-auto">
                         <div className="w-full bg-black/50 rounded-full h-1.5 mb-6 overflow-hidden">
                           <div
@@ -269,7 +269,7 @@ export default function HistoryPage() {
                 })}
               </div>
 
-              
+
               {pagination && pagination.totalPages > 1 && (
                 <div className="animate-item-3 mt-auto flex justify-center pb-8">
                   <div
@@ -305,7 +305,7 @@ export default function HistoryPage() {
             </div>
           )}
 
-          
+
           {!loading && !error && resumes.length === 0 && (
             <div className="animate-item-2 flex-1 flex flex-col items-center justify-center text-center">
               <div className="w-20 h-20 bg-[#18181b] rounded-full flex items-center justify-center mb-6">

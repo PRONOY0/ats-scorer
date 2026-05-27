@@ -178,10 +178,6 @@ export default function ResultPage() {
 
                 {/* LEFT PANE - SCORE & OVERVIEW */}
                 <div className="w-full lg:w-[35%] xl:w-[30%] h-full flex flex-col p-6 lg:p-10 border-b lg:border-b-0 lg:border-r border-white/5 relative glass-panel shrink-0">
-                    <button onClick={() => router.push('/')} className="self-start mb-8 text-[#a1a1aa] hover:text-white flex items-center gap-2 font-mono text-xs uppercase tracking-widest transition-colors group">
-                        <ChevronLeft size={14} className="group-hover:-translate-x-1 transition-transform" /> Back to Scanner
-                    </button>
-
                     <div className="flex-1 flex flex-col justify-center animate-item-1">
                         <div className="inline-flex items-center self-start px-3 py-1 bg-[#CCFF00]/10 border border-[#CCFF00]/20 rounded text-[#CCFF00] font-mono text-[10px] tracking-wider mb-8 uppercase">
                             <CheckCircle2 size={12} className="mr-2" /> ANALYSIS COMPLETE

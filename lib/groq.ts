@@ -31,7 +31,8 @@ export async function analyzeResume(rawText: string, targetRole: string) {
   );
 
   if (!response.ok) {
-    throw new Error(`Groq error: ${response.statusText}`);
+    console.error(`Groq error: ${response.statusText}`);
+    return getFallbackResult();
   }
 
   const data = await response.json();
@@ -50,8 +51,9 @@ export async function analyzeResume(rawText: string, targetRole: string) {
       const missingAllLinks =
         !links?.github && !links?.linkedin && !links?.portfolio;
 
-      const rawHasLinks =
-        /(github\.com|linkedin\.com|https?:\/\/)/i.test(rawText);
+      const rawHasLinks = /(github\.com|linkedin\.com|https?:\/\/)/i.test(
+        rawText,
+      );
 
       if (!rawHasLinks && missingAllLinks) {
         breakdown.structure = Math.min(breakdown.structure, 2);
@@ -129,6 +131,41 @@ export async function analyzeResume(rawText: string, targetRole: string) {
 
     return result;
   } catch {
-    throw new Error(`Invalid JSON from Groq: ${cleaned.slice(0, 200)}`);
+    console.error(`Invalid JSON from Groq: ${cleaned.slice(0, 200)}`);
+    return getFallbackResult();
   }
+}
+
+function getFallbackResult(): ResumeAnalysisResult {
+  return {
+    atsScore: 0,
+    scoreBreakdown: {
+      proofOfImpact: 0,
+      projectQuality: 0,
+      keywordMatch: 0,
+      workExperience: 0,
+      education: 0,
+      structure: 0,
+    },
+    extractedText: {
+      projects: [],
+      experience: [],
+      links: {},
+    },
+    strengths: [],
+    weaknesses: [],
+    suggestions: [
+      {
+        priority: "HIGH",
+        area: "Analysis",
+        suggestion:
+          "We were unable to analyze your resume at this time. Please try again.",
+      },
+    ],
+    improvementMessage: {
+      overall: "Analysis unavailable. Please try again.",
+      roleAlignment: "Unable to determine role alignment.",
+      topAction: "Re-upload your resume and try again.",
+    },
+  };
 }

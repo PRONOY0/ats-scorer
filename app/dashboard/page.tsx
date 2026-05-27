@@ -60,6 +60,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useUser();
   const [data, setData] = useState<AnalyticsResponse | null>(null);
+  const [dataLoading, setDataLoading] = useState(true);
 
   useEffect(() => {
     if (!user) return;
@@ -70,6 +71,8 @@ export default function DashboardPage() {
         setData(res);
       } catch (err) {
         console.error(err);
+      } finally {
+        setDataLoading(false);
       }
     };
 
@@ -80,9 +83,16 @@ export default function DashboardPage() {
   const formatArea = (area: string) =>
     area.replace(/([A-Z])/g, " $1").replace(/^./, (s) => s.toUpperCase());
 
-  if (authLoading) return (
-    <div className="min-h-screen bg-[#060606] flex items-center justify-center">
-      <div className="w-5 h-5 border-2 border-[#CCFF00] border-t-transparent rounded-full animate-spin" />
+  if (authLoading || dataLoading) return (
+    <div className="min-h-screen bg-[#060606] flex items-center justify-center relative">
+      <div
+        className="fixed inset-0 z-0 pointer-events-none"
+        style={{
+          backgroundImage: "radial-gradient(rgba(204,255,0,0.05) 1px, transparent 0)",
+          backgroundSize: "32px 32px"
+        }}
+      />
+      <Activity size={32} className="animate-pulse relative z-10" style={{ color: '#CCFF00' }} />
     </div>
   );
 
@@ -146,7 +156,7 @@ export default function DashboardPage() {
         ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 4px; }
       `}</style>
 
-      <div className="min-h-screen bg-[#060606] text-white relative overflow-x-hidden">
+      <div className="min-h-screen bg-[#060606] text-white relative p-16 overflow-x-hidden">
 
         {/* Dot grid bg */}
         <div className="fixed inset-0 z-0 pointer-events-none" style={{ backgroundImage: "radial-gradient(rgba(204,255,0,0.05) 1px, transparent 0)", backgroundSize: "32px 32px" }} />

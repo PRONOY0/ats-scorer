@@ -210,10 +210,8 @@ export default function HomePage() {
       <div className="absolute inset-0 bg-grid z-0 pointer-events-none" />
       <div className="orb-bg pointer-events-none" />
 
-      {/* Main Container - Immersive UI Grid */}
       <div className="relative z-10 w-full flex-1 flex flex-col lg:grid lg:grid-cols-[1.2fr_1fr] p-6 lg:p-12 gap-8 lg:gap-12 lg:h-screen max-w-360 mx-auto overflow-y-auto lg:overflow-hidden">
 
-        {/* Left Section: Hero + Analysis Steps */}
         <section className="flex flex-col justify-center gap-6 pb-8 lg:pb-0 h-full">
           <div>
             <div className="inline-flex items-center px-3 py-1.5 bg-[#18181b] border border-[#27272a] rounded text-[#CCFF00] font-mono text-[11px] tracking-wider mb-6 uppercase">

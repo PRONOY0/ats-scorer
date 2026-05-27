@@ -19,7 +19,6 @@ export async function GET(req: Request) {
     );
 
     const orderBy = searchParams.get("orderBy") || "latest";
-    const search = searchParams.get("search") || "";
 
     const skip = (page - 1) * limit;
 
