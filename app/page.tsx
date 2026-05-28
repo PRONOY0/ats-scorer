@@ -214,10 +214,6 @@ export default function HomePage() {
 
         <section className="flex flex-col justify-center gap-6 pb-8 lg:pb-0 h-full">
           <div>
-            <div className="inline-flex items-center px-3 py-1.5 bg-[#18181b] border border-[#27272a] rounded text-[#CCFF00] font-mono text-[11px] tracking-wider mb-6 uppercase">
-              [ AI SCORER v1.0.4 ] <span className="ml-1 cursor-blink">|</span>
-            </div>
-
             <h1 className="text-5xl lg:text-[82px] font-black leading-[0.9] tracking-[-0.03em] mb-6 uppercase">
               Your<br />resume is<br /><span className="text-[#CCFF00]">lying</span> to you.
             </h1>
@@ -227,7 +223,6 @@ export default function HomePage() {
             </p>
           </div>
 
-          {/* Analysis Steps - Show only during analysis or after result */}
           {(isAnalyzing || result) && (
             <div className="flex flex-col gap-4 mt-4 lg:mt-auto">
               {ANALYSIS_STEPS.map((step, idx) => {
