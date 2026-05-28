@@ -27,9 +27,10 @@ export async function POST(req: Request) {
 
     const newUser = await prisma.user.upsert({
       where: {
-        id: retrievedUid,
+        email: decoded?.email,
       },
       update: {
+        id: decoded?.uid,
         name: decoded.name,
         avatar: decoded.picture,
         role: role,
