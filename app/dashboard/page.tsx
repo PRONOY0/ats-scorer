@@ -156,7 +156,7 @@ export default function DashboardPage() {
         ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 4px; }
       `}</style>
 
-      <div className="min-h-screen bg-[#060606] text-white relative p-16 overflow-x-hidden">
+      <div className="min-h-screen bg-[#060606] text-white relative py-20 lg:p-16 overflow-x-hidden">
 
         {/* Dot grid bg */}
         <div className="fixed inset-0 z-0 pointer-events-none" style={{ backgroundImage: "radial-gradient(rgba(204,255,0,0.05) 1px, transparent 0)", backgroundSize: "32px 32px" }} />

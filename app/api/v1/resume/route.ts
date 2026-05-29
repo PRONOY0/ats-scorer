@@ -35,56 +35,28 @@ export async function GET(req: Request) {
       return NextResponse.json({ message: "Not Authorized" }, { status: 403 });
     }
 
-    let getAllResumes;
-
-    if (check_user_exist.role === "ADMIN") {
-      getAllResumes = await prisma.resume.findMany({
-        include: {
-          user: {
-            select: {
-              name: true,
-              email: true,
-              avatar: true,
-            },
+    const getAllResumes = await prisma.resume.findMany({
+      where: {
+        userId: user_id,
+        ...(search && {
+          title: {
+            contains: search,
+            mode: "insensitive",
           },
-        },
-        skip: skip,
-        take: limit,
-        orderBy: {
-          createdAt: orderBy === "latest" ? "desc" : "asc",
-        },
-      });
+        }),
+      },
+      orderBy: {
+        createdAt: orderBy === "latest" ? "desc" : "asc",
+      },
+      skip: skip,
+      take: limit,
+    });
 
-      if (getAllResumes.length === 0) {
-        return NextResponse.json(
-          { message: "No resume at the current moment" },
-          { status: 200 },
-        );
-      }
-    } else {
-      getAllResumes = await prisma.resume.findMany({
-        where: {
-          userId: user_id,
-          ...(search && {
-            title: {
-              contains: search,
-              mode: "insensitive",
-            },
-          }),
-        },
-        orderBy: {
-          createdAt: orderBy === "latest" ? "desc" : "asc",
-        },
-        skip: skip,
-        take: limit,
-      });
-
-      if (getAllResumes.length === 0) {
-        return NextResponse.json(
-          { message: "No resume at the current moment" },
-          { status: 200 },
-        );
-      }
+    if (getAllResumes.length === 0) {
+      return NextResponse.json(
+        { message: "No resume at the current moment" },
+        { status: 200 },
+      );
     }
 
     const totalResume = await prisma.resume.count({

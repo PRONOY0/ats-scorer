@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { ChevronLeft, Zap, Target, TrendingUp, AlertTriangle, CheckCircle2, ChevronRight, Check, X } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { Zap, Target, TrendingUp, AlertTriangle, CheckCircle2, ChevronRight, Check, X, Activity } from 'lucide-react';
 import axios from 'axios';
 import { fetchResume_by_id } from '@/lib/api';
 import { Resume } from '@/lib/generated/prisma';
@@ -18,7 +17,6 @@ const BREAKDOWN_MAX_SCORES: Record<string, number> = {
 };
 
 export default function ResultPage() {
-    const router = useRouter();
     const params = useParams();
     const id = params.id as string;
     const [displayScore, setDisplayScore] = useState(0);
@@ -102,9 +100,15 @@ export default function ResultPage() {
     }
 
     if (loading || !result) return (
-        <div style={{ minHeight: "100vh", background: "#060606", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <div style={{ width: 36, height: 36, border: "2px solid #1a1a1a", borderTop: "2px solid #CCFF00", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        <div className="min-h-screen bg-[#060606] flex items-center justify-center relative">
+            <div
+                className="fixed inset-0 z-0 pointer-events-none"
+                style={{
+                    backgroundImage: "radial-gradient(rgba(204,255,0,0.05) 1px, transparent 0)",
+                    backgroundSize: "32px 32px"
+                }}
+            />
+            <Activity size={32} className="animate-pulse relative z-10" style={{ color: '#CCFF00' }} />
         </div>
     );
 
@@ -113,7 +117,7 @@ export default function ResultPage() {
     const suggestions = result?.suggestions as { priority: "HIGH" | "MEDIUM" | "LOW"; area: string; suggestion: string; }[];
 
     return (
-        <div className="min-h-screen relative overflow-hidden bg-[#060606] text-white font-sans select-none">
+        <div className="min-h-screen relative overflow-x-hidden lg:overflow-hidden bg-[#060606] text-white font-sans select-none">
             <style dangerouslySetInnerHTML={{
                 __html: `
                 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap');
@@ -174,11 +178,11 @@ export default function ResultPage() {
             <div className="fixed orb-bg-2" />
 
             {/* Layout Wrapper */}
-            <div className="relative z-10 flex flex-col lg:flex-row h-screen max-w-1600 mx-auto">
+            <div className="relative z-10 flex flex-col lg:flex-row h-screen max-w-1600 mx-auto min-h-0">
 
                 {/* LEFT PANE - SCORE & OVERVIEW */}
                 <div className="w-full lg:w-[35%] xl:w-[30%] h-full flex flex-col p-6 lg:p-10 border-b lg:border-b-0 lg:border-r border-white/5 relative glass-panel shrink-0">
-                    <div className="flex-1 flex flex-col justify-center animate-item-1">
+                    <div className="flex-1 flex flex-col justify-center animate-item-1 mt-10 lg:mt-0">
                         <div className="inline-flex items-center self-start px-3 py-1 bg-[#CCFF00]/10 border border-[#CCFF00]/20 rounded text-[#CCFF00] font-mono text-[10px] tracking-wider mb-8 uppercase">
                             <CheckCircle2 size={12} className="mr-2" /> ANALYSIS COMPLETE
                         </div>
@@ -228,7 +232,7 @@ export default function ResultPage() {
                 </div>
 
                 {/* RIGHT PANE - DETAILED STATS */}
-                <div className="w-full lg:w-[65%] xl:w-[70%] h-full overflow-y-auto custom-scrollbar p-6 lg:p-12 pb-32">
+                <div className="w-full lg:w-[65%] xl:w-[70%] h-full custom-scrollbar p-6 lg:p-12 pb-32 min-h-0 lg:overflow-y-auto lg:pt-24">
 
                     {/* Top Action Box */}
                     <div className="glass-panel rounded-2xl p-6 lg:p-8 mb-8 animate-item-2 flex flex-col md:flex-row items-center gap-6 border-l-4" style={{ borderLeftColor: '#CCFF00' }}>
@@ -342,7 +346,7 @@ export default function ResultPage() {
                         <div className="mb-6">
                             <span className="text-xs text-zinc-500 uppercase font-bold tracking-wider block mb-3">Detected Skills</span>
                             <div className="flex flex-wrap gap-2">
-                                {extractedText.skills.map((skill,index) => (
+                                {extractedText.skills.map((skill, index) => (
                                     <span key={index} className="px-3 py-1.5 rounded-full bg-black/40 border border-[#27272a] text-xs text-white">
                                         {skill}
                                     </span>
@@ -354,7 +358,7 @@ export default function ResultPage() {
                             <span className="text-xs text-zinc-500 uppercase font-bold tracking-wider block mb-3">Portfolio Projects</span>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 {
-                                    extractedText.projects.map((project,idx) => {
+                                    extractedText.projects.map((project, idx) => {
                                         return (
                                             <div key={idx} className="p-3 rounded-lg bg-black/40 border border-[#27272a] flex justify-between items-center">
                                                 <span className="text-sm font-medium">

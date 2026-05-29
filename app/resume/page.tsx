@@ -112,7 +112,7 @@ export default function HistoryPage() {
       `}</style>
 
       <div
-        className="min-h-screen relative text-white select-none pb-24 overflow-y-auto p-16"
+        className="min-h-screen relative text-white select-none py-24 overflow-y-auto p-2 lg:p-16"
         style={{
           backgroundColor: '#060606',
           backgroundImage: 'radial-gradient(rgba(204,255,0,0.05) 1px, transparent 0)',
@@ -162,35 +162,37 @@ export default function HistoryPage() {
                 borderLeftWidth: '4px',
               }}
             >
-              <div className="flex items-center gap-3 mr-2">
+              <div className="flex items-center gap-3 mr-2 w-full lg:w-fit">
                 <Filter size={16} className="text-zinc-400" />
                 <span className="font-mono text-xs uppercase tracking-widest text-zinc-400">Sort &amp; Show:</span>
               </div>
 
 
-              <div className="relative group">
+              <div className="relative group w-full xl:w-fit">
                 <select
                   value={orderBy}
                   onChange={(e) => { setOrderBy(e.target.value as 'latest' | 'oldest'); setPage(1); }}
-                  className="appearance-none bg-[#18181b] border border-[#27272a] text-white pl-4 pr-10 py-2 rounded-lg font-mono text-xs uppercase focus:border-[#CCFF00] transition-colors cursor-pointer outline-none hover:border-[#CCFF00]/50"
+                  className="w-full appearance-none bg-[#18181b] border border-[#27272a] text-white pl-4 pr-10 py-2 rounded-lg font-mono text-xs uppercase focus:border-[#CCFF00] transition-colors cursor-pointer outline-none hover:border-[#CCFF00]/50"
                 >
                   <option value="latest" className="bg-[#18181b]">Newest First</option>
                   <option value="oldest" className="bg-[#18181b]">Oldest First</option>
                 </select>
+                
                 <Search size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none group-hover:text-[#CCFF00] transition-colors" />
               </div>
 
 
-              <div className="relative group">
+              <div className="relative group w-full xl:w-fit">
                 <select
                   value={limit}
                   onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}
-                  className="appearance-none bg-[#18181b] border border-[#27272a] text-white pl-4 pr-10 py-2 rounded-lg font-mono text-xs uppercase focus:border-[#CCFF00] transition-colors cursor-pointer outline-none hover:border-[#CCFF00]/50"
+                  className="w-full xl:w-fit appearance-none bg-[#18181b] border border-[#27272a] text-white pl-4 pr-10 py-2 rounded-lg font-mono text-xs uppercase focus:border-[#CCFF00] transition-colors cursor-pointer outline-none hover:border-[#CCFF00]/50"
                 >
                   <option value="6" className="bg-[#18181b]">6 / Page</option>
                   <option value="12" className="bg-[#18181b]">12 / Page</option>
                   <option value="24" className="bg-[#18181b]">24 / Page</option>
                 </select>
+
                 <Search size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none group-hover:text-[#CCFF00] transition-colors" />
               </div>
             </div>

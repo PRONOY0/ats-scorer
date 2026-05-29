@@ -212,7 +212,7 @@ export default function HomePage() {
 
       <div className="relative z-10 w-full flex-1 flex flex-col lg:grid lg:grid-cols-[1.2fr_1fr] p-6 lg:p-12 gap-8 lg:gap-12 lg:h-screen max-w-360 mx-auto overflow-y-auto lg:overflow-hidden">
 
-        <section className="flex flex-col justify-center gap-6 pb-8 lg:pb-0 h-full">
+        <section className="flex flex-col justify-center gap-6 pb-8 lg:pb-0 h-full py-16 lg:py-0">
           <div>
             <h1 className="text-5xl lg:text-[82px] font-black leading-[0.9] tracking-[-0.03em] mb-6 uppercase">
               Your<br />resume is<br /><span className="text-[#CCFF00]">lying</span> to you.
