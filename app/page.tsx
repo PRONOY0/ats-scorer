@@ -1,14 +1,13 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
-import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { UploadCloud, CheckCircle2, FileText, ChevronDown } from 'lucide-react';
-import { useUser } from '@/hooks/useUser';
-import GoogleAuthButton from '@/components/AuthButton';
-import axios from 'axios';
+import { useState, useRef } from 'react';
+import { UploadCloud, ArrowRight, CheckCircle2, ChevronDown } from 'lucide-react';
+import { AnimatePresence } from 'motion/react';
+import Loader from '@/components/Loader';
+import AuthModal from '@/components/AuthModal';
+import { useRouter } from "next/navigation";
 import { analyzeResume } from '@/lib/api';
-import { useRouter } from 'next/navigation';
-
+import axios from 'axios';
 
 const TARGET_ROLES = [
   'FULLSTACK_DEVELOPER',
@@ -22,60 +21,20 @@ const TARGET_ROLES = [
   'DEVOPS'
 ];
 
-const ANALYSIS_STEPS = [
-  'Reading resume',
-  'Analyzing role alignment',
-  'Evaluating projects',
-  'Generating suggestions',
-  'Finalizing score'
-];
+export default function App() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
-export default function HomePage() {
-  const { user, loading } = useUser();
-  const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
   const [targetRole, setTargetRole] = useState(TARGET_ROLES[0]);
-  const [isDragging, setIsDragging] = useState(false);
-  const [showAuthModal, setShowAuthModal] = useState(false);
-
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [activeStep, setActiveStep] = useState(0);
-  const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
-  const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<{ id: string; atsScore: number } | null>(null);
-
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const onDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  }, []);
+  const router = useRouter();
 
-  const onDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-  }, []);
+  const [user, setUser] = useState<{ id: string } | null>(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
-  const onDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      const droppedFile = e.dataTransfer.files[0];
-      if (droppedFile.type === 'application/pdf') {
-        setFile(droppedFile);
-      } else {
-        setError('Only PDF files are supported.');
-      }
-    }
-  }, []);
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setFile(e.target.files[0]);
-    }
-  };
-
-  const handleAnalyze = async () => {
+  const handleAnalyzeClick = async () => {
     if (!user) {
       setShowAuthModal(true);
       return;
@@ -83,307 +42,213 @@ export default function HomePage() {
 
     if (!file) return;
 
-    setError(null);
-    setIsAnalyzing(true);
-    setResult(null);
-    setCompletedSteps(new Set());
-    setActiveStep(0);
+    try {
+      setIsLoading(true);
 
-    const runAnalysis = async () => {
-      try {
-        let stepIdx = 0;
-        const stepInterval = setInterval(() => {
-          if (stepIdx < ANALYSIS_STEPS.length - 1) {
-            setActiveStep(stepIdx);
-            setCompletedSteps(prev => new Set(prev).add(stepIdx));
-            stepIdx++;
-          }
-        }, 18000);
+      const formData = new FormData();
+      formData.append("resume", file);
+      formData.append("targetRole", targetRole);
 
-        const formData = new FormData();
-        formData.append("resume", file);
-        formData.append("targetRole", targetRole);
-
-        const res = await axios.post(analyzeResume, formData, {
+      const res = await axios.post(
+        analyzeResume,
+        formData,
+        {
           withCredentials: true,
-        });
+        }
+      );
 
-        clearInterval(stepInterval);
-
-        setCompletedSteps(new Set([0, 1, 2, 3, 4]));
-        setActiveStep(ANALYSIS_STEPS.length);
-
-        setTimeout(() => {
-          setIsAnalyzing(false);
-          setResult(res.data);
-          router.push(`/results/${res.data.id}`);
-        }, 600);
-      } catch (err) {
-        setIsAnalyzing(false);
-        const axiosErr = err as { response?: { data?: { message?: string } } };
-        setError(axiosErr.response?.data?.message || "Analysis failed. Please try again.")
-      }
-    };
-
-    runAnalysis();
+      router.push(`/results/${res.data.id}`)
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const resetState = () => {
-    setFile(null);
-    setResult(null);
-    setError(null);
-    setIsAnalyzing(false);
-    setCompletedSteps(new Set());
-    setActiveStep(0);
+  const handleAuthSuccess = async () => {
+    setUser({ id: "dummy-user-id" });
+    setShowAuthModal(false);
+
+    await handleAnalyzeClick();
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-[#060606] text-white flex flex-col font-sans select-none pb-24">
-      <style dangerouslySetInnerHTML={{
-        __html: `
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@400;700&display=swap');
+    <div className="min-h-screen bg-bg-light text-text-main font-sans flex flex-col selection:bg-sage selection:text-white">
+      <main className="flex-1 w-full max-w-300 mx-auto px-6 lg:px-12 flex flex-col pt-12 pb-24">
+        {isLoading ? (
+          <Loader variant="full" text="Scanning Profile Elements..." />
+        ) : (
+          <div className="w-full flex-1 flex flex-col justify-center items-center">
+            <div className="w-full max-w-3xl text-center">
+              <div className="mb-12">
+                <h1 className="text-5xl sm:text-7xl font-serif font-light leading-[1.1] mb-6 tracking-tight">
+                  Unlock your professional <br />
+                  <span className="italic text-sage">potential</span> with precision.
+                </h1>
 
-        body {
-          font-family: 'Inter', sans-serif;
-          background-color: #060606;
-          color: white;
-        }
+                <p className="text-muted-dark max-w-2xl mx-auto text-lg leading-relaxed">
+                  Most resumes never get read by humans. Our AI determines if you&apos;re invisible to the algorithms that matter.
+                </p>
+              </div>
 
-        .font-mono {
-          font-family: 'JetBrains Mono', monospace;
-        }
+              <div className="flex flex-col items-center justify-center w-full">
+                <div className="w-full max-w-150 relative p-4">
+                  <div className="flex justify-between items-center mb-4 font-sans text-[10px] text-muted uppercase tracking-[0.2em] font-bold px-4">
+                    <span>ANALYSIS WORKSPACE</span>
+                    <span>v1</span>
+                  </div>
 
-        /* Dot Grid Background */
-        .bg-grid {
-          background-image: radial-gradient(rgba(204,255,0,0.07) 1px, transparent 0);
-          background-size: 24px 24px;
-        }
+                  <div
+                    className={`w-full relative h-70 upload-dashed rounded-3xl flex flex-col items-center justify-center soft-shadow cursor-pointer transition-all group ${isDragging
+                      ? 'bg-white scale-[1.02]'
+                      : file
+                        ? 'bg-white/80 border-sage'
+                        : 'bg-white/50 hover:bg-white'
+                      }`}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setIsDragging(true);
+                    }}
+                    onDragLeave={(e) => {
+                      e.preventDefault();
 
-        /* Animations */
-        @keyframes drift {
-          0% { transform: translate(-50px, 0); }
-          100% { transform: translate(50px, 0); }
-        }
+                      if (e.currentTarget.contains(e.relatedTarget as Node)) {
+                        return;
+                      }
 
-        @keyframes scaleY {
-          from { transform: scaleY(0); }
-          to { transform: scaleY(1); }
-        }
+                      setIsDragging(false);
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      setIsDragging(false);
 
-        @keyframes pulse {
-          0% { transform: scale(1); opacity: 1; }
-          100% { transform: scale(2); opacity: 0; }
-        }
+                      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                        const droppedFile = e.dataTransfer.files[0];
 
-        @keyframes blink {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0; }
-        }
-        
-        @keyframes springDown {
-          0% { transform: translateY(-100%) scale(0.95); opacity: 0; }
-          60% { transform: translateY(10%) scale(1.02); opacity: 1; }
-          100% { transform: translateY(0) scale(1); opacity: 1; }
-        }
+                        if (droppedFile.type === 'application/pdf') {
+                          setFile(droppedFile);
+                        }
+                      }
+                    }}
+                    onClick={() => {
+                      if (!isLoading) {
+                        fileInputRef.current?.click();
+                      }
+                    }}
+                  >
+                    <input
+                      type="file"
+                      accept="application/pdf"
+                      className="hidden"
+                      ref={fileInputRef}
+                      onChange={(e) => {
+                        const selectedFile = e.target.files?.[0];
 
-        .orb-bg {
-          position: absolute;
-          width: 400px;
-          height: 400px;
-          background: radial-gradient(circle, rgba(204,255,0,0.15) 0%, transparent 70%);
-          filter: blur(80px);
-          top: 10%;
-          left: 5%;
-          z-index: 1;
-          animation: drift 15s infinite alternate ease-in-out;
-        }
+                        if (!selectedFile) return;
 
-        .scale-y-animation {
-          transform-origin: top;
-          animation: scaleY 1s forwards;
-        }
+                        if (selectedFile.type !== 'application/pdf') {
+                          alert('Only PDF files are supported');
+                          return;
+                        }
 
-        .cursor-blink { animation: blink 1s step-end infinite; }
-        .auth-modal { animation: springDown 0.6s cubic-bezier(0.175, 0.885, 0.32, 1) forwards; }
-      `}} />
+                        setFile(selectedFile);
+                      }}
+                    />
 
-      <div className="absolute inset-0 bg-grid z-0 pointer-events-none" />
-      <div className="orb-bg pointer-events-none" />
+                    {file ? (
+                      <div className="flex flex-col items-center">
+                        <div className="w-16 h-16 rounded-full border border-warm-dark/30 bg-bg-light flex items-center justify-center mb-4">
+                          <CheckCircle2 className="w-6 h-6 text-sage" />
+                        </div>
 
-      <div className="relative z-10 w-full flex-1 flex flex-col lg:grid lg:grid-cols-[1.2fr_1fr] p-6 lg:p-12 gap-8 lg:gap-12 lg:h-screen max-w-360 mx-auto overflow-y-auto lg:overflow-hidden">
+                        <p className="font-serif text-xl text-text-main mb-1 truncate max-w-50 lg:max-w-75 font-bold">
+                          {file.name}
+                        </p>
 
-        <section className="flex flex-col justify-center gap-6 pb-8 lg:pb-0 h-full py-16 lg:py-0">
-          <div>
-            <h1 className="text-5xl lg:text-[82px] font-black leading-[0.9] tracking-[-0.03em] mb-6 uppercase">
-              Your<br />resume is<br /><span className="text-[#CCFF00]">lying</span> to you.
-            </h1>
-
-            <p className="text-lg text-[#a1a1aa] max-w-110 leading-normal">
-              Most resumes never get read by humans. Our AI determines if you&apos;re invisible to the algorithms that matter.
-            </p>
-          </div>
-
-          {(isAnalyzing || result) && (
-            <div className="flex flex-col gap-4 mt-4 lg:mt-auto">
-              {ANALYSIS_STEPS.map((step, idx) => {
-                const isCompleted = completedSteps.has(idx);
-                const isActive = activeStep === idx;
-                const isPending = !isCompleted && !isActive;
-
-                return (
-                  <div key={step} className="flex items-center gap-4 relative">
-                    {/* Connecting Line */}
-                    {idx !== ANALYSIS_STEPS.length - 1 && (
-                      <div className="absolute left-2.75 top-6 w-px h-4 bg-[#27272a]">
-                        {(isCompleted || isActive) && (
-                          <div className={`absolute top-0 w-1px h-4 bg-[#CCFF00] ${isCompleted ? 'scale-y-100' : 'scale-y-animation'}`} />
-                        )}
+                        <p className="font-sans text-[10px] text-sage uppercase tracking-widest font-bold">
+                          READY FOR ANALYSIS
+                        </p>
                       </div>
+                    ) : (
+                      <>
+                        <div className="w-16 h-16 bg-[#F5F4F0] rounded-full flex items-center justify-center mb-6 transition-transform group-hover:scale-105">
+                          <UploadCloud className="w-6 h-6 text-sage stroke-[1.5]" />
+                        </div>
+
+                        <div className="text-lg font-serif font-bold mb-1">
+                          Drop Resume PDF
+                        </div>
+
+                        <div className="text-xs text-muted uppercase tracking-widest">
+                          PDF ONLY &bull; MAX 2MB &bull; SECURE
+                        </div>
+                      </>
                     )}
+                  </div>
 
-                    {/* Circle */}
-                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 ${isCompleted ? 'border-[#CCFF00] bg-[#CCFF00]' : isActive ? 'border-[#CCFF00] bg-transparent relative' : 'border-[#27272a] bg-[#060606]'}`}>
-                      {isCompleted ? (
-                        <CheckCircle2 size={14} className="text-black" strokeWidth={3} />
-                      ) : isActive ? (
-                        <div className="w-2 h-2 bg-[#CCFF00] rounded-full animate-[pulse_1.5s_infinite]" />
-                      ) : null}
-                    </div>
+                  <div className="w-full mt-6 flex flex-col items-start px-2">
+                    <label className="font-sans text-[10px] text-muted font-bold uppercase tracking-widest mb-3">
+                      Target Role
+                    </label>
 
-                    {/* Text */}
-                    <div className="flex flex-col">
-                      <span className={`font-mono text-[11px] uppercase tracking-wider ${isPending ? 'text-[#27272a]' : isCompleted ? 'opacity-40' : 'text-white'}`}>
-                        0{idx + 1} {step}
-                      </span>
-                      {isActive && (
-                        <span className="font-mono text-[10px] text-[#a1a1aa] mt-0.5">Cross-referencing tech stacks...</span>
-                      )}
+                    <div className="relative w-full">
+                      <select
+                        value={targetRole}
+                        onChange={(e) => setTargetRole(e.target.value)}
+                        disabled={isLoading}
+                        className="w-full appearance-none bg-white border border-warm/80 text-text-main px-4 py-3 rounded-xl font-sans text-sm outline-none focus:border-sage transition-colors cursor-pointer disabled:opacity-50 soft-shadow-sm font-medium"
+                      >
+                        {TARGET_ROLES.map((role) => (
+                          <option key={role} value={role}>
+                            {role.replace(/_/g, ' ')}
+                          </option>
+                        ))}
+                      </select>
+
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-muted">
+                        <ChevronDown className="w-4 h-4" />
+                      </div>
                     </div>
                   </div>
-                )
-              })}
-            </div>
-          )}
-        </section>
 
-        {/* Right Section: Workspace Base */}
-        <section className="flex flex-col justify-center relative lg:pl-8 mt-4 lg:mt-0 h-full">
+                  {/* Analyze Button */}
+                  <div className="w-full flex justify-center mt-6">
+                    <button
+                      onClick={handleAnalyzeClick}
+                      disabled={!file}
+                      className="bg-sage text-white px-8 py-3.5 rounded-full text-sm font-semibold tracking-wide shadow-lg hover:brightness-110 transition-all flex items-center gap-3 group/btn disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      ANALYZE RESUME
 
-          {/* Upload Card */}
-          <div className="bg-[#18181b]/60 backdrop-blur-xl border border-[#27272a] rounded-2xl p-6 lg:p-8 flex flex-col gap-6 relative shadow-[0_20px_50px_rgba(0,0,0,0.5)] hover:border-[#CCFF00]/30 transition-colors z-10 w-full mb-auto lg:mb-0">
-            <div className="flex justify-between items-center">
-              <h3 className="font-mono text-white text-sm lg:text-base uppercase">Analysis Workspace</h3>
-              <span className="font-mono text-[#a1a1aa] text-sm">v.24</span>
-            </div>
-
-            <div
-              onDragOver={onDragOver}
-              onDragLeave={onDragLeave}
-              onDrop={onDrop}
-              onClick={() => { if (!isAnalyzing) fileInputRef.current?.click(); }}
-              className={`border-2 border-dashed rounded-xl p-8 lg:p-12 text-center transition-all duration-300 flex flex-col items-center justify-center ${isAnalyzing ? 'opacity-50 pointer-events-none' : 'cursor-pointer'} ${isDragging ? 'border-[#CCFF00] bg-[#CCFF00]/5' : (file ? 'border-[#CCFF00]/40 bg-[#CCFF00]/5' : 'border-[#27272a] bg-black/20 hover:border-[#CCFF00]/30')}`}
-            >
-              <input
-                type="file"
-                accept="application/pdf"
-                className="hidden"
-                ref={fileInputRef}
-                onChange={handleFileChange}
-              />
-
-              {file ? (
-                <div className="flex flex-col items-center">
-                  <div className="w-12 h-12 rounded-full border border-[#27272a] bg-[#18181b] flex items-center justify-center mb-3">
-                    <CheckCircle2 size={24} className="text-[#CCFF00]" />
+                      <ArrowRight className="w-4 h-4 opacity-70 group-hover/btn:opacity-100 group-hover/btn:translate-x-1 transition-all" />
+                    </button>
                   </div>
-                  <p className="font-mono text-sm text-white mb-1 truncate max-w-50 lg:max-w-75 font-bold">{file.name}</p>
-                  <p className="font-mono text-[10px] text-[#a1a1aa]">READY FOR ANALYSIS</p>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center">
-                  <UploadCloud size={40} strokeWidth={1.5} className="text-[#CCFF00] mb-4" />
-                  <p className="text-white font-bold mb-2 text-lg">Drop Resume PDF</p>
-                  <p className="font-mono text-[10px] text-[#a1a1aa] uppercase tracking-widest mt-2">PDF only • Max 2MB • Secure</p>
-                </div>
-              )}
-            </div>
-
-            {error && <p className="text-red-400 text-xs font-mono text-center -my-2">{error}</p>}
-
-            <div>
-              <label className="font-mono block mb-2 text-[#a1a1aa] text-xs lg:text-sm uppercase tracking-wide">Target Role</label>
-              <div className="relative">
-                <select
-                  value={targetRole}
-                  onChange={(e) => setTargetRole(e.target.value)}
-                  disabled={isAnalyzing}
-                  className="w-full appearance-none bg-[#060606] border border-[#27272a] text-white p-3 lg:p-4 rounded-lg font-mono text-xs lg:text-sm outline-none focus:border-[#CCFF00] transition-colors cursor-pointer disabled:opacity-50"
-                >
-                  {TARGET_ROLES.map(role => (
-                    <option key={role} value={role}>{role}</option>
-                  ))}
-                </select>
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-500">
-                  <ChevronDown size={16} />
                 </div>
               </div>
             </div>
-
-            {(result && !isAnalyzing) ? (
-              <div className="flex flex-col md:flex-row gap-3">
-                <button className="flex-1 bg-[#CCFF00] text-black font-bold p-3 lg:p-4 rounded-lg uppercase tracking-wider hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(204,255,0,0.3)] transition-all text-sm lg:text-base">
-                  View Full Report &rarr;
-                </button>
-                <button onClick={resetState} className="flex-1 bg-transparent border border-[#27272a] text-[#a1a1aa] font-bold p-3 lg:p-4 rounded-lg uppercase tracking-wider hover:text-white transition-all text-sm lg:text-base">
-                  Re-Analyze
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={handleAnalyze}
-                disabled={!file || isAnalyzing}
-                className={`w-full font-bold p-3 lg:p-4 rounded-lg uppercase tracking-wider transition-all text-sm lg:text-base ${isAnalyzing ? 'bg-[#CCFF00]/50 text-black/50 cursor-wait' : file ? 'bg-[#CCFF00] text-black hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(204,255,0,0.3)]' : 'bg-[#CCFF00]/10 text-[#CCFF00]/50 cursor-not-allowed'}`}
-              >
-                {isAnalyzing ? 'Analyzing...' : 'Analyze Resume \u2192'}
-              </button>
-            )}
-
-            <div className="flex justify-center gap-2 mt-2">
-              <div className={`w-1.5 h-1.5 rounded-full ${isAnalyzing ? 'bg-[#CCFF00] animate-pulse' : 'bg-[#27272a]'}`} />
-              <div className={`w-1.5 h-1.5 rounded-full ${!isAnalyzing && file ? 'bg-[#CCFF00]' : 'bg-[#27272a]'}`} />
-              <div className={`w-1.5 h-1.5 rounded-full ${result && !isAnalyzing ? 'bg-[#CCFF00]' : 'bg-[#27272a]'}`} />
-            </div>
           </div>
+        )}
+      </main>
 
-          <div className="mt-6 flex justify-between font-mono text-[#27272a] text-xs uppercase tracking-wider relative z-10 w-full px-2">
-            <span>System: Stable</span>
-            <span>Auth: {user ? 'Session_Active' : 'Guest'}</span>
-          </div>
-        </section>
-      </div>
 
-      {/* Auth Modal Overlay */}
-      {showAuthModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => setShowAuthModal(false)} />
-          <div className="auth-modal relative bg-zinc-950 border border-zinc-800 rounded-2xl p-8 max-w-sm w-full shadow-2xl flex flex-col items-center">
-            <div className="w-12 h-12 bg-[#CCFF00] rounded-xl flex items-center justify-center mb-6">
-              <FileText size={24} className="text-black" />
-            </div>
-            <h3 className="font-clash font-bold text-2xl mb-2">Sign in required</h3>
-            <p className="text-zinc-400 text-center text-sm mb-8">
-              Create an account or sign in to save your reports and access full analysis.
-            </p>
-
-            <GoogleAuthButton onSuccess={() => setShowAuthModal(false)} />
-
-            <button onClick={() => setShowAuthModal(false)} className="mt-4 text-xs font-mono text-zinc-500 hover:text-white uppercase tracking-widest">
-              Cancel
-            </button>
-          </div>
+      <footer className="px-6 lg:px-12 py-10 border-t border-warm flex justify-between items-center text-muted max-w-300 mx-auto w-full mt-auto">
+        <div className="text-[11px] font-medium">
+          Made by Pronoy Roy
         </div>
-      )}
+        <div className="flex gap-6">
+          <div className="w-24 h-px bg-warm my-auto"></div>
+          <span className="text-[11px] font-serif italic text-sage">Excellence in every line.</span>
+        </div>
+      </footer>
+
+      <AnimatePresence>
+        {showAuthModal && (
+          <AuthModal
+            onClose={() => setShowAuthModal(false)}
+            onSuccess={handleAuthSuccess}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
-
