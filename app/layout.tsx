@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { UserProvider } from "@/hooks/useUser";
 import Navbar from "@/components/Navbar";
+import { GoogleAnalytics } from "@next/third-parties/google";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -71,12 +72,12 @@ export default function RootLayout({
         <UserProvider>
           <div className="min-h-screen flex flex-col">
             <Navbar />
-
             <main className="flex-1">
               {children}
             </main>
           </div>
         </UserProvider>
+        <GoogleAnalytics gaId="G-2PPG5S4BLY" />
       </body>
     </html>
   );
