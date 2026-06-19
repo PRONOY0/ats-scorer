@@ -8,6 +8,7 @@ import AuthModal from '@/components/AuthModal';
 import { useRouter } from "next/navigation";
 import { analyzeResume } from '@/lib/api';
 import axios from 'axios';
+import { useUser } from '@/hooks/useUser';
 
 const TARGET_ROLES = [
   'FULLSTACK_DEVELOPER',
@@ -22,6 +23,7 @@ const TARGET_ROLES = [
 ];
 
 export default function App() {
+  const { user, loading } = useUser();
   const [isLoading, setIsLoading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -30,8 +32,6 @@ export default function App() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const router = useRouter();
-
-  const [user, setUser] = useState<{ id: string } | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
 
   const handleAnalyzeClick = async () => {
@@ -66,9 +66,7 @@ export default function App() {
   };
 
   const handleAuthSuccess = async () => {
-    setUser({ id: "dummy-user-id" });
     setShowAuthModal(false);
-
     await handleAnalyzeClick();
   };
 
