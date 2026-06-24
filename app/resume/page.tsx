@@ -85,8 +85,29 @@ export default function ResumesView() {
     );
   }
 
-  const onViewClick = (id:string) => {
+  const onViewClick = (id: string) => {
     router.push(`/results/${id}`)
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[70vh] text-center px-6">
+        <h2 className="text-6xl font-serif mb-4">
+          Something Went Wrong
+        </h2>
+
+        <p className="text-muted-dark max-w-xl mb-8 text-xl opacity-85">
+          {error}
+        </p>
+
+        <button
+          onClick={() => window.location.reload()}
+          className="px-6 py-3 rounded-full bg-sage text-white font-medium hover:opacity-90 transition"
+        >
+          Try Again
+        </button>
+      </div>
+    );
   }
 
   return (
@@ -171,7 +192,7 @@ export default function ResumesView() {
                   </div>
                   <div className="col-span-2 flex justify-end">
                     <button
-                      onClick={()=>{onViewClick(scan.id)}}
+                      onClick={() => { onViewClick(scan.id) }}
                       className="px-5 py-2.5 rounded-full border border-warm/80 text-[11px] font-bold tracking-wider text-text-main group-hover:bg-sage group-hover:text-white group-hover:border-sage transition-all flex items-center gap-2 group/btn uppercase"
                     >
                       VIEW
@@ -181,8 +202,8 @@ export default function ResumesView() {
                 </div>
               ))}
               {resumes.length === 0 && (
-                <div className="py-12 text-center text-muted-dark font-medium text-sm">
-                  No resumes found for the selected criteria.
+                <div className="py-12 text-center text-muted-dark font-medium text-md">
+                  No resume at the current moment
                 </div>
               )}
             </div>

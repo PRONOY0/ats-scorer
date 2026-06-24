@@ -1,14 +1,13 @@
-import client from "@/lib/client";
-import { ResumeStatus, TargetRole } from "@/lib/generated/prisma";
-import { analyzeResume } from "@/lib/groq";
 import { prisma } from "@/lib/prisma";
 import { pdfToRawText } from "@/services/extractPdfText";
 import { NextResponse } from "next/server";
-import { generateHash } from "@/services/generateHash";
 import { rateLimit } from "@/lib/rateLimiter";
 import { getAuthUser } from "@/services/verifyUser";
 import { analyzeSchema } from "@/services/validation";
-import { ResumeAnalysisResult } from "@/types/resume";
+import { atsQueue } from "@/lib/queues/ats.queue";
+import { TargetRole } from "@/lib/generated/prisma";
+import { generateHash } from "@/services/generateHash";
+import client from "@/lib/client";
 
 export async function POST(req: Request) {
   let user_id: string | undefined;
@@ -68,14 +67,14 @@ export async function POST(req: Request) {
 
     const rawText = await pdfToRawText(resume);
 
-    const hash_gen_text = generateHash(rawText, targetRole);
+    const hash = generateHash(rawText, targetRole);
 
-    const cacheKey = `user:${user_id}:${parsedTargetRole}:${hash_gen_text}`;
+    const cacheKey = `user:${user_id}:${parsedTargetRole}:${hash}`;
 
     const cachedData = await client.get(cacheKey);
 
     if (cachedData) {
-      return NextResponse.json(JSON.parse(cachedData));
+      return NextResponse.json(JSON.parse(cachedData), { status: 200 });
     }
 
     const { success, remaining, resetIn } = await rateLimit(user_id);
@@ -91,25 +90,6 @@ export async function POST(req: Request) {
       );
     }
 
-    const result: ResumeAnalysisResult = await analyzeResume(
-      rawText,
-      targetRole,
-    );
-
-    const resumeData = {
-      rawText,
-      atsScore: result.atsScore,
-      extractedText: result.extractedText,
-      scoreBreakdown: result.scoreBreakdown,
-      improvementMessage: result.improvementMessage,
-      strengths: result.strengths,
-      weaknesses: result.weaknesses,
-      suggestions: result.suggestions,
-      status: ResumeStatus.COMPLETED,
-      title: targetRole,
-      targetRole: parsedTargetRole,
-    };
-
     const existingResume = await prisma.resume.findFirst({
       where: {
         userId: user_id,
@@ -117,59 +97,83 @@ export async function POST(req: Request) {
       },
     });
 
-    let updateResume;
+    let save_raw_text;
 
     if (existingResume) {
-      updateResume = await prisma.resume.update({
+      save_raw_text = await prisma.resume.update({
         where: {
           id: existingResume.id,
         },
         data: {
-          ...resumeData,
-          scanCount: { increment: 1 }
+          rawText,
+          status: "PENDING",
+          isEmailSent: false,
         },
       });
     } else {
-      updateResume = await prisma.resume.create({
+      save_raw_text = await prisma.resume.create({
         data: {
-          ...resumeData,
           userId: user_id,
+          rawText,
+          atsScore: 0,
+          scoreBreakdown: {
+            proofOfImpact: 0,
+            projectQuality: 0,
+            keywordMatch: 0,
+            workExperience: 0,
+            education: 0,
+            structure: 0,
+          },
+          extractedText: {
+            projects: [],
+            experience: [],
+            links: {},
+          },
+          strengths: [],
+          weaknesses: [],
+          suggestions: [
+            {
+              priority: "",
+              area: "",
+              suggestion: "",
+            },
+          ],
+          improvementMessage: {
+            overall: "",
+            roleAlignment: "",
+            topAction: "",
+          },
+          status: "PENDING",
+          targetRole: parsedTargetRole,
+          title: targetRole,
+          isEmailSent: false,
         },
       });
     }
 
-    await client.setex(
-      cacheKey,
-      60 * 60 * 24 * 7,
-      JSON.stringify(updateResume),
+    await atsQueue.add(
+      "analyze-resume",
+      {
+        resumeId: save_raw_text.id,
+      },
+      {
+        attempts: 2,
+        backoff: {
+          type: "exponential",
+          delay: 5000,
+        },
+      },
     );
 
-    const resumeCacheKey = `user:${user_id}:resume:${updateResume.id}`;
-    
-    await client.setex(
-      resumeCacheKey,
-      60 * 60 * 24 * 7,
-      JSON.stringify(updateResume),
+    return NextResponse.json(
+      {
+        message: "Resume queued for analysis",
+        resumeId: save_raw_text.id,
+        status: save_raw_text.status,
+      },
+      { status: 202 },
     );
-
-    return NextResponse.json(updateResume, { status: 200 });
   } catch (error) {
-    try {
-      if (user_id && parsedTargetRole) {
-        const existingResume = await prisma.resume.findFirst({
-          where: { userId: user_id, targetRole: parsedTargetRole },
-        });
-        if (existingResume) {
-          await prisma.resume.update({
-            where: { id: existingResume.id },
-            data: { status: ResumeStatus.FAILED },
-          });
-        }
-      }
-    } catch {
-      // silent
-    }
-
     const message =
       error instanceof Error ? error.message : "Internal Server Error";
     return NextResponse.json({ message }, { status: 500 });

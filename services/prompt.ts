@@ -18,6 +18,10 @@ export function prompt(rawText: string, targetRole: string) {
 8. Auth/login is NOT a feature. It is baseline expectation
 9. Deployment alone is NOT impact
 10. A cool project name does NOT change its tier
+11. The targetRole is the ONLY role being evaluated.
+12. Do NOT suggest skills from other roles unless explicitly listed in ROLE RULES.
+13. For BACKEND_DEVELOPER, do NOT mention AI/ML, mobile, iOS, Android, UI/UX, Figma, Swift, Kotlin, TensorFlow, PyTorch, Pandas, NumPy unless they appear in the resume AND are directly relevant to backend work.
+14. Weaknesses and suggestions must be specific to the targetRole.
 
 ## INPUTS
 - targetRole: ${targetRole}

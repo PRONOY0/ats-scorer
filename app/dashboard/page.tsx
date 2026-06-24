@@ -162,6 +162,28 @@ export default function DashboardView() {
     router.push(`/results/${id}`);
   }
 
+  if (data.totalScans === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[70vh] text-center px-6">
+        <h2 className="text-6xl font-serif mb-4">
+          No Resume Analyses Yet
+        </h2>
+
+        <p className="text-muted-dark max-w-xl mb-8 text-xl opacity-85">
+          Upload your first resume and start tracking ATS scores,
+          strengths, weaknesses, and performance trends.
+        </p>
+
+        <button
+          onClick={() => router.push("/")}
+          className="px-6 py-3 rounded-full bg-sage text-white font-medium hover:opacity-90 transition"
+        >
+          Analyze Resume
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full flex flex-col pt-8 px-4 max-w-300 mx-auto min-w-[320px]">
       <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6 px-4">

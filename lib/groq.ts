@@ -14,7 +14,7 @@ export async function analyzeResume(rawText: string, targetRole: string) {
       },
       body: JSON.stringify({
         model: "llama-3.3-70b-versatile",
-        temperature: 1,
+        temperature: .3,
         response_format: { type: "json_object" },
         messages: [
           {

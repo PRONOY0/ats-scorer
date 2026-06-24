@@ -90,26 +90,34 @@ export default function ResumeDetailsView() {
   const id = params.id as string;
 
   useEffect(() => {
+    if (!id) {
+      return;
+    }
+
     const fetchAnalysis = async () => {
       try {
-        const res = await axios.get(
-          fetchResume_by_id(id),
-          {
-            withCredentials: true,
-          }
-        );
+        const res = await axios.get(fetchResume_by_id(id), {
+          withCredentials: true,
+        });
 
         setData(res.data);
+
+        if (res.data.status === "COMPLETED" || res.data.status === "FAILED") {
+          setLoading(false);
+          clearInterval(intervalId);
+        }
       } catch (err) {
         console.error(err);
-      } finally {
         setLoading(false);
+        clearInterval(intervalId);
       }
     };
 
-    if (id) {
-      fetchAnalysis();
-    }
+    fetchAnalysis();
+
+    const intervalId = setInterval(fetchAnalysis, 3000);
+
+    return () => clearInterval(intervalId);
   }, [id]);
 
   if (loading) {
@@ -122,6 +130,21 @@ export default function ResumeDetailsView() {
 
   if (!data) {
     return <div>Analysis not found</div>;
+  }
+
+  if (
+    data.status === "PENDING" ||
+    data.status === "PROCESSING"
+  ) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader />
+      </div>
+    );
+  }
+
+  if (data.status === "FAILED") {
+    return <div>Analysis failed</div>;
   }
 
   return (

@@ -27,7 +27,13 @@ export async function GET(
     const cachedData = await client.get(cacheKey);
 
     if (cachedData) {
-      return NextResponse.json(JSON.parse(cachedData));
+      const parsed = JSON.parse(cachedData);
+
+      if (parsed.status === "COMPLETED") {
+        return NextResponse.json(parsed);
+      }
+
+      await client.del(cacheKey);
     }
 
     const fetchResumes = await prisma.resume.findFirst({
@@ -44,11 +50,13 @@ export async function GET(
       );
     }
 
-    await client.setex(
-      cacheKey,
-      60 * 60 * 24 * 7,
-      JSON.stringify(fetchResumes),
-    );
+    if (fetchResumes.status === "COMPLETED") {
+      await client.setex(
+        cacheKey,
+        60 * 60 * 24 * 7,
+        JSON.stringify(fetchResumes),
+      );
+    }
 
     return NextResponse.json(fetchResumes, { status: 200 });
   } catch (error) {

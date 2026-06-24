@@ -54,7 +54,16 @@ export async function GET(req: Request) {
 
     if (getAllResumes.length === 0) {
       return NextResponse.json(
-        { message: "No resume at the current moment" },
+        {
+          message: "No resume at the current moment",
+          getAllResumes: [],
+          pagination: {
+            total: 0,
+            page,
+            limit,
+            totalPages: 0,
+          },
+        },
         { status: 200 },
       );
     }

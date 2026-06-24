@@ -57,7 +57,7 @@ export default function App() {
         }
       );
 
-      router.push(`/results/${res.data.id}`)
+      router.push(`/results/${res.data.resumeId}`);
     } catch (err) {
       console.error(err);
     } finally {
