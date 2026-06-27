@@ -1,4 +1,5 @@
 import client from "@/lib/client";
+import { updateLastSeenAt } from "@/lib/lastSeenAtHelper";
 import { prisma } from "@/lib/prisma";
 import { getAuthUser } from "@/services/verifyUser";
 import { ScoreBreakdown } from "@/types/resume";
@@ -13,6 +14,8 @@ export async function GET(req: Request) {
     }
 
     const user_id = user.uid;
+
+    updateLastSeenAt(user_id);
 
     const cacheKey = `user:${user_id}:analytics`;
 

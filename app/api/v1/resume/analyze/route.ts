@@ -8,6 +8,7 @@ import { atsQueue } from "@/lib/queues/ats.queue";
 import { TargetRole } from "@/lib/generated/prisma";
 import { generateHash } from "@/services/generateHash";
 import client from "@/lib/client";
+import { updateLastSeenAt } from "@/lib/lastSeenAtHelper";
 
 export async function POST(req: Request) {
   let user_id: string | undefined;
@@ -20,6 +21,8 @@ export async function POST(req: Request) {
     }
 
     user_id = user.uid;
+
+    updateLastSeenAt(user_id);
 
     const formData = await req.formData();
     const resume = formData.get("resume") as File;

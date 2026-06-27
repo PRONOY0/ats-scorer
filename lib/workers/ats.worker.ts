@@ -10,7 +10,6 @@ import { generateHash } from "@/services/generateHash";
 const worker = new Worker(
   "ats-analysis",
   async (job) => {
-
     try {
       const resume = await prisma.resume.findUnique({
         where: {
@@ -112,4 +111,6 @@ worker.on("failed", async (job, error) => {
       },
     });
   }
+
+  console.error(error);
 });

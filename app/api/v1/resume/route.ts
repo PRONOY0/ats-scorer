@@ -1,3 +1,4 @@
+import { updateLastSeenAt } from "@/lib/lastSeenAtHelper";
 import { prisma } from "@/lib/prisma";
 import { getAuthUser } from "@/services/verifyUser";
 import { NextResponse } from "next/server";
@@ -24,6 +25,8 @@ export async function GET(req: Request) {
     const skip = (page - 1) * limit;
 
     const user_id = user.uid;
+
+    updateLastSeenAt(user_id);
 
     const check_user_exist = await prisma.user.findUnique({
       where: {

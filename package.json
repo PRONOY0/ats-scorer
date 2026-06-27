@@ -8,6 +8,7 @@
     "start": "next start",
     "worker": "tsx lib/workers/ats.worker.ts",
     "worker:email": "tsx lib/workers/email.worker.ts",
+    "reminder": "tsx services/inactiveUser.cron.ts",
     "lint": "eslint"
   },
   "dependencies": {
@@ -29,6 +30,7 @@
     "lucide-react": "^1.16.0",
     "motion": "^12.40.0",
     "next": "16.2.4",
+    "node-cron": "^4.5.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-icons": "^5.6.0",

@@ -34,6 +34,7 @@ export async function POST(req: Request) {
         name: decoded.name,
         avatar: decoded.picture,
         role: role,
+        lastSeenAt: new Date(),
       },
       create: {
         id: retrievedUid,
@@ -41,6 +42,7 @@ export async function POST(req: Request) {
         name: decoded.name,
         avatar: decoded.picture!,
         role: role,
+        lastSeenAt: new Date(),
       },
     });
 

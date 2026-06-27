@@ -45,9 +45,12 @@ model User {
   avatar String
   role   Role   @default(USER)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  resumes   Resume[]
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  lastSeenAt         DateTime?
+  lastReminderSentAt DateTime?
+  
+  resumes            Resume[]
 }
 
 model Resume {
@@ -57,7 +60,7 @@ model Resume {
   user   User   @relation(fields: [userId], references: [id])
 
   status      ResumeStatus
-  isEmailSent Boolean?      @default(false)
+  isEmailSent Boolean?     @default(false)
 
   title String?
 
