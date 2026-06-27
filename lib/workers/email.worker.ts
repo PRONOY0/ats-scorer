@@ -123,7 +123,7 @@ const emailWorker = new Worker(
           id: user.id,
         },
         data: {
-          lastRemindedAt: new Date(),
+          lastReminderSentAt: new Date(),
         },
       });
 
