@@ -74,6 +74,8 @@ const emailWorker = new Worker(
           isEmailSent: true,
         },
       });
+
+      return;
     }
 
     if (job.name === "send-reminder-email") {
