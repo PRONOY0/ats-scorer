@@ -14,17 +14,28 @@ cron.schedule("* * * * *", async () => {
 
     const inactiveUsers = await prisma.user.findMany({
       where: {
-        lastSeenAt: {
-          lt: sevenDaysAgo,
-        },
         OR: [
           {
-            lastReminderSentAt: null,
+            lastSeenAt: null,
           },
           {
-            lastReminderSentAt: {
+            lastSeenAt: {
               lt: sevenDaysAgo,
             },
+          },
+        ],
+        AND: [
+          {
+            OR: [
+              {
+                lastReminderSentAt: null,
+              },
+              {
+                lastReminderSentAt: {
+                  lt: sevenDaysAgo,
+                },
+              },
+            ],
           },
         ],
       },
