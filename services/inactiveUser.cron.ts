@@ -33,6 +33,9 @@ cron.schedule("* * * * *", async () => {
       },
     });
 
+    console.log("Inactive users:", inactiveUsers);
+    console.log("Count:", inactiveUsers.length);
+
     for (const user of inactiveUsers) {
       await emailQueue.add(
         "send-reminder-email",
