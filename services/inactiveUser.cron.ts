@@ -6,7 +6,7 @@ import { emailQueue } from "@/lib/queues/email.queue";
 
 const seven_days = 7 * 24 * 60 * 60 * 1000;
 
-cron.schedule("* * * * *", async () => {
+cron.schedule("30 9 * * *", async () => {
   try {
     console.log("Running inactive user reminder cron...");
 
