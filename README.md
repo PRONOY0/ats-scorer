@@ -87,7 +87,6 @@ Handles resume upload, role selection, result polling, dashboard analytics, resu
 - Prisma ORM
 - PostgreSQL / Supabase
 - Firebase Authentication
-- Zod validation
 - PDF text extraction
 - Rate limiting
 - Redis caching
@@ -750,8 +749,8 @@ With PM2:     EC2 keeps running → PM2 keeps workers alive → jobs keep proces
 
 ```bash
 # 1. Clone the repo
-git clone https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
-cd YOUR_REPO_NAME
+git clone https://github.com/PRONOY0/ats-scorer
+cd ats-scorer
 
 # 2. Install dependencies
 npm install
@@ -761,11 +760,33 @@ touch .env
 ```
 
 ```env
-DATABASE_URL=
-REDIS_URL=
-GROQ_API_KEY=
-RESEND_API_KEY=
-NEXT_PUBLIC_APP_URL=http://localhost:3000
+NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyDUMMY1234567890abcdefghijklmnop
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=my-demo-app.firebaseapp.com
+FIREBASE_PROJECT_ID=my-demo-project-12345
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=my-demo-app.appspot.com
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=123456789012
+NEXT_PUBLIC_FIREBASE_APP_ID=1:123456789012:web:abcdef1234567890abcdef
+NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=G-ABCDEF1234
+FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASC...\n-----END PRIVATE KEY-----"
+FIREBASE_CLIENT_EMAIL=firebase-adminsdk-demo@my-demo-project-12345.iam.gserviceaccount.com
+
+CLOUDINARY_CLOUD_NAME=demo-cloud
+CLOUDINARY_API_KEY=123456789012345
+CLOUDINARY_API_SECRET=abcdefghijklmnopqrstuvwxyz123456
+
+ADMIN_EMAIL=admin@example.com
+
+GROQ_API_KEY=gsk_dummyabcdefghijklmnopqrstuvwxyz123456
+
+DATABASE_URL=postgresql://demo_user:demo_password@localhost:5432/demo_database
+
+GEMINI_API_KEY=AIzaSyDummyGeminiApiKey1234567890
+
+REDIS_URL=redis://localhost:6379
+
+RESEND_API_KEY=re_dummyabcdefghijklmnopqrstuvwxyz123456
+
+NEXT_PUBLIC_APP_URL=https://ats-scorer-pearl.vercel.app
 ```
 
 > Also include any Firebase, Cloudinary, or other auth-related variables your setup uses.
@@ -816,7 +837,7 @@ node -v
 npm -v
 
 # 5. Clone the repo
-git clone https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
+git clone https://github.com/PRONOY0/ats-scorer
 cd YOUR_REPO_NAME
 
 # 6. Install dependencies
@@ -829,10 +850,32 @@ nano .env
 Paste in the production variables:
 
 ```env
-DATABASE_URL=
-REDIS_URL=
-GROQ_API_KEY=
-RESEND_API_KEY=
+NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyDUMMY1234567890abcdefghijklmnop
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=my-demo-app.firebaseapp.com
+FIREBASE_PROJECT_ID=my-demo-project-12345
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=my-demo-app.appspot.com
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=123456789012
+NEXT_PUBLIC_FIREBASE_APP_ID=1:123456789012:web:abcdef1234567890abcdef
+NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=G-ABCDEF1234
+FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASC...\n-----END PRIVATE KEY-----"
+FIREBASE_CLIENT_EMAIL=firebase-adminsdk-demo@my-demo-project-12345.iam.gserviceaccount.com
+
+CLOUDINARY_CLOUD_NAME=demo-cloud
+CLOUDINARY_API_KEY=123456789012345
+CLOUDINARY_API_SECRET=abcdefghijklmnopqrstuvwxyz123456
+
+ADMIN_EMAIL=admin@example.com
+
+GROQ_API_KEY=gsk_dummyabcdefghijklmnopqrstuvwxyz123456
+
+DATABASE_URL=postgresql://demo_user:demo_password@localhost:5432/demo_database
+
+GEMINI_API_KEY=AIzaSyDummyGeminiApiKey1234567890
+
+REDIS_URL=redis://localhost:6379
+
+RESEND_API_KEY=re_dummyabcdefghijklmnopqrstuvwxyz123456
+
 NEXT_PUBLIC_APP_URL=https://ats-scorer-pearl.vercel.app
 ```
 
@@ -967,8 +1010,6 @@ BullMQ fits this project well because the work is job-based and task-oriented. K
 ## Future Improvements
 
 - Job description matching
-- Resume version comparison
-- Resume improvement history
 - Bull Board dashboard
 - Dockerized deployment
 - CI/CD pipeline
