@@ -8,7 +8,6 @@ const seven_days = 7 * 24 * 60 * 60 * 1000;
 
 cron.schedule("30 9 * * *", async () => {
   try {
-    console.log("Running inactive user reminder cron...");
 
     const sevenDaysAgo = new Date(Date.now() - seven_days);
 
@@ -43,9 +42,6 @@ cron.schedule("30 9 * * *", async () => {
         id: true,
       },
     });
-
-    console.log("Inactive users:", inactiveUsers);
-    console.log("Count:", inactiveUsers.length);
 
     for (const user of inactiveUsers) {
       await emailQueue.add(
